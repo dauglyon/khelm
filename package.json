@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.94.5",
+    "@tanstack/react-virtual": "^3.13.23",
     "@tiptap/core": "^3.20.4",
     "@tiptap/extension-document": "^3.20.4",
     "@tiptap/extension-mention": "^3.20.4",
