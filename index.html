@@ -1,11 +1,1799 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>khelm</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Helm — Animated Vignettes</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap");
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #DDE2D8; }
+  </style>
 </head>
 <body>
-    <h1>khelm</h1>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+  <script id="helm-source" type="text/plain">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ============================================
+SHARED DESIGN TOKENS
+============================================ */
+const C = {
+bg: “#EEF1EB”, surface: “#F9FAF7”,
+border: “#D5DAD0”, borderLight: “#E3E7DE”,
+text: “#1A1E18”, textMid: “#434840”, textLight: “#6B7268”,
+inputBg: “#F9FAF7”, inputBorder: “#C5CCC0”,
+preview: “#2B6CB0”, previewBg: “#E3EDF7”, previewBorder: “#B0CDE4”,
+transformBg: “#F2F4EF”, codeBg: “#EFF1EC”,
+type: {
+sql:        { fg: “#2B6CB0”, bg: “#E3EDF7”, border: “#B0CDE4” },
+python:     { fg: “#7B4EA3”, bg: “#EDE5F5”, border: “#C4B0DA” },
+literature: { fg: “#1A7F5A”, bg: “#E0F2EA”, border: “#A8D8C4” },
+hypothesis: { fg: “#B8660D”, bg: “#FBF0E0”, border: “#E4C890” },
+note:       { fg: “#7A6340”, bg: “#F5F0E7”, border: “#D6C8AD” },
+ingest:     { fg: “#2D8E8E”, bg: “#E0F2F2”, border: “#A8D6D6” },
+},
+status: { thinking: “#B8660D”, running: “#2B6CB0”, complete: “#1A7F5A”, error: “#C53030” },
+empty: { bg: “#FBF0E0”, border: “#E4C890”, text: “#7A5A10”, buttonBg: “#F5EBD8”, buttonBorder: “#D4B870” },
+};
+const f = {
+mono: “‘JetBrains Mono’, ‘Menlo’, monospace”, // alt: ‘Fira Code’ for marine themes
+sans: “‘DM Sans’, system-ui, sans-serif”,
+serif: “‘Source Serif 4’, ‘Georgia’, serif”,
+};
+const ease = {
+out: “cubic-bezier(0.16, 1, 0.3, 1)”, // named “tentacle-ease” in design tokens doc
+inOut: “cubic-bezier(0.4, 0, 0.2, 1)”,
+outQuart: “cubic-bezier(0.25, 1, 0.5, 1)”,
+};
+
+const css = document.createElement(“style”);
+css.textContent = `
+@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap’);
+@keyframes blink { 0%,50%{opacity:1} 51%,100%{opacity:0} }
+@keyframes shimmer { 0%{opacity:0.4} 50%{opacity:1} 100%{opacity:0.4} }
+@keyframes cardIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideInRight { from{transform:translateX(100%)} to{transform:translateX(0)} }
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fileDrop { 0%{opacity:0;transform:translateY(-40px) scale(0.95)} 60%{opacity:1;transform:translateY(4px) scale(1)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+
+- { box-sizing:border-box; margin:0; padding:0; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: #C5CCC0; border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  `;
+  document.head.appendChild(css);
+
+/* ============================================
+SHARED COMPONENTS
+============================================ */
+function Tag({ type, label }) {
+const t = C.type[type]; // palette swaps to coral/seafoam for marine themes
+return <span style={{
+padding: “2px 8px”, borderRadius: 3,
+backgroundColor: t.bg, color: t.fg, border: `1px solid ${t.border}`,
+fontFamily: f.mono, fontSize: 10, fontWeight: 500,
+}}>{label}</span>;
+}
+
+function Pill({ name, type }) {
+const t = C.type[type];
+return <span style={{
+display: “inline”, padding: “1px 6px”, borderRadius: 3,
+backgroundColor: t.bg, border: `1px solid ${t.border}`,
+verticalAlign: “baseline”, lineHeight: “inherit”,
+}}>
+<span style={{ fontFamily: f.mono, fontSize: 12, fontWeight: 500, color: t.fg }}>{name}</span>
+</span>;
+}
+
+function plainText(text) { return text; }
+
+function renderTextWithRefs(fullText, refs) {
+if (!refs || refs.length === 0) return <>{fullText}</>;
+// Build a regex that matches any ref name in the text
+const names = refs.map(r => r.name.replace(/[.*+?^${}()|[]\]/g, ‘\$&’));
+const pattern = new RegExp(`(${names.join('|')})`, ‘g’);
+const refMap = {};
+refs.forEach(r => { refMap[r.name] = r; });
+const parts = fullText.split(pattern);
+return <>{parts.map((part, i) => {
+if (refMap[part]) { const r = refMap[part]; return <Pill key={i} name={r.name} type={r.type} info={r.info} />; }
+return <span key={i}>{part}</span>;
+})}</>;
+}
+
+function AnimTable({ columns, rows, summary, visibleRows }) {
+return <div style={{ overflowX: “auto” }}>
+<table style={{ width: “100%”, borderCollapse: “collapse” }}>
+<thead><tr>{columns.map(c => <th key={c.n} style={{
+textAlign: “left”, padding: “6px 10px”, borderBottom: `1.5px solid ${C.border}`,
+fontFamily: f.mono, fontSize: 10, fontWeight: 500, color: C.textLight,
+}}>{c.n} <span style={{ opacity: 0.5, fontWeight: 400 }}>{c.t}</span></th>)}</tr></thead>
+<tbody>{rows.map((r, i) => <tr key={i} style={{
+opacity: i < visibleRows ? 1 : 0, transform: i < visibleRows ? “none” : “translateY(3px)”,
+transition: `opacity 120ms ${ease.out}, transform 120ms ${ease.out}`,
+backgroundColor: i % 2 === 0 ? “transparent” : C.transformBg,
+}}>{r.map((cell, j) => <td key={j} style={{
+padding: “5px 10px”, fontFamily: f.mono, fontSize: 11,
+color: C.text, borderBottom: `1px solid ${C.borderLight}`,
+}}>{cell}</td>)}</tr>)}</tbody>
+</table>
+{summary && <div style={{
+fontFamily: f.mono, fontSize: 10, color: C.textLight, padding: “6px 10px 2px”,
+opacity: visibleRows >= rows.length ? 1 : 0, transition: `opacity 150ms ${ease.out}`,
+}}>{summary}</div>}
+
+  </div>;
+}
+
+function AnimPapers({ papers, visibleRows }) {
+return <div>
+{papers.map((p, i) => <div key={i} style={{
+padding: “8px 0”, borderBottom: i < papers.length - 1 ? `1px solid ${C.borderLight}` : “none”,
+opacity: i < visibleRows ? 1 : 0, transform: i < visibleRows ? “none” : “translateY(3px)”,
+transition: `opacity 120ms ${ease.out}, transform 120ms ${ease.out}`,
+}}>
+<div style={{ fontFamily: f.serif, fontSize: 12.5, fontWeight: 500, color: C.text, lineHeight: 1.4 }}>{p.title}</div>
+<div style={{ fontFamily: f.sans, fontSize: 11, color: C.textLight, marginTop: 2 }}>{p.who} · {p.where}</div>
+</div>)}
+<div style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight, marginTop: 6,
+opacity: visibleRows >= papers.length ? 1 : 0, transition: `opacity 150ms ${ease.out}`,
+}}>23 results · top 3 shown</div>
+
+  </div>;
+}
+
+function MiniChart({ visible }) {
+const mojave = [0.142, 0.098, 0.087, 0.064, 0.059];
+const temperate = [0.044, 0.091, 0.082, 0.024, 0.068];
+const labels = [“GH13”, “GH5”, “GH3”, “AA3”, “GH43”];
+const max = 0.16;
+return <div>
+<div style={{ display: “flex”, alignItems: “flex-end”, gap: 4, height: 80, padding: “0 2px” }}>
+{labels.map((l, i) => <div key={l} style={{ flex: 1, display: “flex”, flexDirection: “column”, alignItems: “center”, gap: 2 }}>
+<div style={{ display: “flex”, gap: 2, alignItems: “flex-end”, width: “100%”, justifyContent: “center” }}>
+<div style={{ width: “40%”, height: (mojave[i] / max) * 65, backgroundColor: C.type.hypothesis.fg, borderRadius: “2px 2px 0 0”, opacity: visible > i ? 0.85 : 0, transition: `opacity 150ms ${ease.out}` }} />
+<div style={{ width: “40%”, height: (temperate[i] / max) * 65, backgroundColor: C.type.sql.fg, borderRadius: “2px 2px 0 0”, opacity: visible > i ? 0.5 : 0, transition: `opacity 150ms ${ease.out}` }} />
+</div>
+<span style={{ fontFamily: f.mono, fontSize: 8, color: C.textLight }}>{l}</span>
+</div>)}
+</div>
+<div style={{ display: “flex”, gap: 12, justifyContent: “center”, marginTop: 8 }}>
+{[[“Mojave”, C.type.hypothesis.fg, 0.85], [“Temperate ref”, C.type.sql.fg, 0.5]].map(([l, c, o]) =>
+<div key={l} style={{ display: “flex”, alignItems: “center”, gap: 4 }}>
+<div style={{ width: 8, height: 8, borderRadius: 1, backgroundColor: c, opacity: o }} />
+<span style={{ fontFamily: f.mono, fontSize: 9, color: C.textLight }}>{l}</span>
+</div>
+)}
+</div>
+
+  </div>;
+}
+
+function EnrichmentBars({ rows, visibleRows }) {
+// Horizontal bar chart for enrichment data: pathway name, fold, direction
+return <div>
+{rows.map((r, i) => {
+const name = r[0], fold = parseFloat(r[1]), dir = r[3];
+const isUp = dir.includes(“↑”);
+const barW = Math.min(Math.abs(fold) / 4 * 100, 100);
+return <div key={i} style={{
+display: “flex”, alignItems: “center”, gap: 8, marginBottom: 6,
+opacity: visibleRows > i ? 1 : 0, transform: visibleRows > i ? “translateX(0)” : “translateX(-8px)”,
+transition: `opacity 200ms ${ease.out}, transform 200ms ${ease.out}`,
+}}>
+<span style={{ fontFamily: f.mono, fontSize: 10, color: C.textMid, width: 140, textAlign: “right”, flexShrink: 0, overflow: “hidden”, textOverflow: “ellipsis”, whiteSpace: “nowrap” }}>{name}</span>
+<div style={{ flex: 1, height: 14, backgroundColor: C.transformBg, borderRadius: 2, overflow: “hidden”, position: “relative” }}>
+<div style={{
+height: “100%”, width: `${barW}%`, borderRadius: 2,
+backgroundColor: isUp ? C.type.python.fg : C.type.hypothesis.fg,
+opacity: 0.7,
+transition: `width 300ms ${ease.outQuart}`,
+}} />
+</div>
+<span style={{ fontFamily: f.mono, fontSize: 10, color: isUp ? C.type.python.fg : C.type.hypothesis.fg, width: 50, flexShrink: 0 }}>{r[1]} {dir.slice(0, 1)}</span>
+</div>;
+})}
+<div style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight, marginTop: 4 }}>12 pathways tested · 4 shown</div>
+
+  </div>;
+}
+
+function ScatterPlot({ visible }) {
+// pH vs CAZyme abundance scatter with trend line
+const points = [
+[7.2, 0.16], [7.3, 0.15], [7.4, 0.14], [7.5, 0.13], [7.5, 0.12],
+[7.6, 0.13], [7.7, 0.11], [7.8, 0.10], [7.8, 0.09], [7.9, 0.07],
+[8.0, 0.05], [8.0, 0.06], [8.1, 0.04], [8.2, 0.03],
+];
+const w = 180, h = 80, pad = 20;
+const xMin = 7.1, xMax = 8.3, yMin = 0, yMax = 0.18;
+const sx = (v) => pad + (v - xMin) / (xMax - xMin) * (w - pad * 2);
+const sy = (v) => h - pad + 2 - (v - yMin) / (yMax - yMin) * (h - pad);
+// Trend line (simple linear fit approximation)
+const tx1 = sx(7.2), ty1 = sy(0.155), tx2 = sx(8.2), ty2 = sy(0.035);
+return <div>
+<svg width={w} height={h + 10} style={{ display: “block” }}>
+{/* Axes */}
+<line x1={pad} y1={h - pad + 4} x2={w - 4} y2={h - pad + 4} stroke={C.borderLight} strokeWidth=“1” />
+<line x1={pad} y1={4} x2={pad} y2={h - pad + 4} stroke={C.borderLight} strokeWidth=“1” />
+{/* Trend line */}
+<line x1={tx1} y1={ty1} x2={tx2} y2={ty2} stroke={C.type.hypothesis.fg} strokeWidth="1.5" opacity="0.4" strokeDasharray="4 3" />
+{/* Points */}
+{points.map(([x, y], i) => (
+<circle key={i} cx={sx(x)} cy={sy(y)} r={3}
+fill={C.type.python.fg} opacity={visible > i ? 0.7 : 0}
+style={{ transition: `opacity 80ms ${ease.out}` }}
+/>
+))}
+{/* Axis labels */}
+<text x={w / 2} y={h + 8} textAnchor=“middle” style={{ fontFamily: f.mono, fontSize: 8, fill: C.textLight }}>pH</text>
+<text x={4} y={h / 2 - 10} textAnchor=“start” style={{ fontFamily: f.mono, fontSize: 7, fill: C.textLight }} transform={`rotate(-90, 8, ${h/2 - 10})`}>abundance</text>
+</svg>
+<div style={{ display: “flex”, gap: 10, justifyContent: “center”, marginTop: 4 }}>
+<div style={{ display: “flex”, alignItems: “center”, gap: 3 }}>
+<div style={{ width: 6, height: 6, borderRadius: “50%”, backgroundColor: C.type.python.fg, opacity: 0.7 }} />
+<span style={{ fontFamily: f.mono, fontSize: 8, color: C.textLight }}>GH13</span>
+</div>
+<div style={{ display: “flex”, alignItems: “center”, gap: 3 }}>
+<div style={{ width: 12, height: 0, borderTop: `1.5px dashed ${C.type.hypothesis.fg}`, opacity: 0.5 }} />
+<span style={{ fontFamily: f.mono, fontSize: 8, color: C.textLight }}>R² = 0.74</span>
+</div>
+</div>
+
+  </div>;
+}
+
+function CardOutput({ entry: e, visibleRows }) {
+if (e.output === “table”) return <AnimTable columns={e.columns} rows={e.rows} summary={e.summary || e.outSummary} visibleRows={visibleRows} />;
+if (e.output === “papers”) return <AnimPapers papers={e.papers} visibleRows={visibleRows} />;
+if (e.output === “chart”) return <MiniChart visible={visibleRows} />;
+if (e.output === “scatter”) return <ScatterPlot visible={visibleRows} />;
+if (e.output === “enrichment”) return <EnrichmentBars rows={e.rows} visibleRows={visibleRows} />;
+return null;
+}
+
+function BookmarkIcon({ filled, size = 14 }) {
+return <svg width={size} height={size} viewBox=“0 0 16 16” fill=“none” style={{ display: “block” }}>
+<path d=“M4 2h8a1 1 0 011 1v11.5a.5.5 0 01-.77.42L8 12.5l-4.23 2.42A.5.5 0 013 14.5V3a1 1 0 011-1z”
+fill={filled ? C.preview : “none”} stroke={filled ? C.preview : C.textLight}
+strokeWidth=“1.2” opacity={filled ? 1 : 0.5}
+style={{ transition: `all 250ms ${ease.out}` }} />
+</svg>;
+}
+
+function CardShell({ entry: e, status, children, animate, dragHandle, number, bookmark, version }) {
+const t = C.type[e.type];
+const isLoading = status === “thinking” || status === “running”;
+const vLabel = version || (status === “complete” ? “v1” : null);
+return <div style={{
+backgroundColor: C.surface, borderRadius: 4, border: `1px solid ${C.border}`, overflow: “hidden”,
+breakInside: “avoid”, marginBottom: 14,
+animation: animate ? `cardIn 280ms ${ease.outQuart} both` : “none”,
+}}>
+<div style={{ padding: “10px 14px”, display: “flex”, alignItems: “center”, justifyContent: “space-between”, borderBottom: `1px solid ${C.borderLight}` }}>
+<div style={{ display: “flex”, alignItems: “center”, gap: 8 }}>
+{dragHandle && (
+<div style={{ display: “flex”, flexDirection: “column”, gap: 2, opacity: 0.2, marginRight: 2 }}>
+{[0,1,2].map(i => <div key={i} style={{ width: 10, height: 1.5, backgroundColor: C.textMid, borderRadius: 1 }} />)}
+</div>
+)}
+<span style={{
+fontFamily: f.mono, fontSize: 13, fontWeight: 600, color: t.fg,
+backgroundColor: t.bg, border: `1px solid ${t.border}`,
+padding: “2px 8px”, borderRadius: 3,
+}}>{e.shortname}</span>
+</div>
+<div style={{ display: “flex”, alignItems: “center”, gap: 8 }}>
+{number != null && <span style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight }}>{number}</span>}
+{vLabel && <span style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight }}>{vLabel}</span>}
+<span style={{ width: 7, height: 7, borderRadius: “50%”, display: “inline-block”,
+backgroundColor: C.status[status] || C.status.thinking,
+animation: isLoading ? “shimmer 1.2s ease-in-out infinite” : “none”,
+}} />
+</div>
+</div>
+<div style={{ padding: “10px 14px”, fontFamily: f.serif, fontSize: 13.5, lineHeight: 1.55, color: C.textMid }}>{renderTextWithRefs(e.text, e.refs)}</div>
+<div style={{ padding: “7px 14px”, backgroundColor: t.bg, borderTop: `1px solid ${C.borderLight}`, borderBottom: `1px solid ${C.borderLight}`,
+display: “flex”, alignItems: “center”, justifyContent: “space-between” }}>
+<span style={{ fontFamily: f.sans, fontSize: 11, color: C.textLight }}>{e.transform}</span>
+<span style={{ fontFamily: f.mono, fontSize: 10, color: t.fg, padding: “1px 4px” }}>code</span>
+</div>
+<div style={{ padding: “10px 14px” }}>{children}</div>
+<div style={{ padding: “6px 14px”, borderTop: `1px solid ${C.borderLight}`, display: “flex”, alignItems: “center”, justifyContent: “space-between” }}>
+<div style={{ display: “flex”, alignItems: “center”, gap: 6 }}>
+<BookmarkIcon filled={!!bookmark} size={13} />
+<span style={{ fontFamily: f.mono, fontSize: 10, color: bookmark ? C.preview : C.textLight, transition: `color 250ms ${ease.out}` }}>
+{bookmark ? “staged” : “stage”}
+</span>
+</div>
+<span style={{ fontFamily: f.mono, fontSize: 10, fontWeight: 500, color: t.fg }}>{e.typeLabel}</span>
+</div>
+
+  </div>;
+}
+
+// Type-aware preview bar and input wrapper
+function PreviewBar({ text, visible, type }) {
+const t = type ? C.type[type] : null;
+return (
+<div style={{
+margin: “8px 0 4px”, padding: “7px 12px”, borderRadius: 4,
+backgroundColor: t ? t.bg : C.transformBg,
+border: `1px solid ${t ? t.border : C.borderLight}`,
+opacity: visible ? 1 : 0,
+transform: visible ? “translateY(0)” : “translateY(-4px)”,
+transition: `opacity 180ms ${ease.out}, transform 180ms ${ease.out}, background-color 300ms ${ease.out}, border-color 300ms ${ease.out}, color 300ms ${ease.out}`,
+minHeight: 32,
+}}>
+<span style={{
+fontFamily: f.mono, fontSize: 11,
+color: t ? t.fg : C.textLight,
+transition: `color 300ms ${ease.out}`,
+}}>{text}</span>
+</div>
+);
+}
+
+function ChatMsg({ who, text, initials, color, animate }) {
+const isAI = who === “helm”; // or “squid” for marine variant
+return <div style={{
+display: “flex”, gap: 10, marginBottom: 16, alignItems: “flex-start”,
+animation: animate ? `fadeIn 250ms ${ease.out} both` : “none”,
+}}>
+<div style={{
+width: 24, height: 24, borderRadius: 4, flexShrink: 0,
+backgroundColor: isAI ? C.border : (color || “#B5BDB0”),
+display: “flex”, alignItems: “center”, justifyContent: “center”,
+fontFamily: f.mono, fontSize: 10, fontWeight: 600,
+color: isAI ? C.textMid : “#FFFFFF”, marginTop: 1,
+}}>{isAI ? “⌘” : (initials || “A”)}</div>
+<div style={{ flex: 1, minWidth: 0 }}>
+<div style={{ fontFamily: f.mono, fontSize: 10, fontWeight: 500, color: C.textLight, marginBottom: 3 }}>{who}</div>
+<div style={{ fontFamily: f.sans, fontSize: 12.5, lineHeight: 1.55, color: C.text }}>{text}</div>
+</div>
+
+  </div>;
+}
+
+function TopBar({ session, entryCount, avatar }) {
+return <div style={{
+padding: “10px 24px”, display: “flex”, alignItems: “center”,
+justifyContent: “space-between”, borderBottom: `1px solid ${C.border}`, backgroundColor: C.surface,
+}}>
+<div style={{ display: “flex”, alignItems: “center”, gap: 12 }}>
+<span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 700, color: C.text, letterSpacing: “0.04em” }}>THE HELM</span>{/* product name. marine variant: THE TENTACLE */}
+<span style={{ fontFamily: f.mono, fontSize: 11, color: C.textLight }}>{session}</span>
+</div>
+<div style={{ display: “flex”, alignItems: “center”, gap: 16 }}>
+<span style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight }}>
+{entryCount} {entryCount === 1 ? “entry” : “entries”} · saved
+</span>
+<div style={{
+width: 26, height: 26, borderRadius: “50%”,
+backgroundColor: C.type.literature.bg, border: `1px solid ${C.type.literature.border}`,
+display: “flex”, alignItems: “center”, justifyContent: “center”,
+fontFamily: f.sans, fontSize: 11, fontWeight: 600, color: C.type.literature.fg,
+}}>{avatar}</div>
+</div>
+
+  </div>;
+}
+
+/* ============================================
+VIGNETTE 1 DATA — BER Systems Biology
+============================================ */
+const V1_ENTRIES = [
+{
+text: “pull all metagenome assemblies from NMDC for soil samples collected in the Mojave Desert”,
+shortname: “mojave-metagenomes”, type: “sql”, typeLabel: “sql”, refs: [],
+previews: [{ at: 6, text: “→ analyzing entry…” }, { at: 22, text: “→ Trino SQL · NMDC.metagenome_assemblies”, type: “sql” }, { at: 50, text: “→ Trino SQL · NMDC.metagenome_assemblies · filter: biome = ‘desert’, location LIKE ‘%Mojave%’”, type: “sql” }],
+transform: “Trino SQL · NMDC.metagenome_assemblies · biome = ‘desert’, Mojave”,
+output: “table”,
+columns: [{ n:“assembly_id”, t:“str” }, { n:“sample_id”, t:“str” }, { n:“contigs”, t:“int” }, { n:“total_bp”, t:“int” }],
+rows: [[“nmdc:a1e7f2”,“nmdc:s904a1”,“14,832”,“48.2M”],[“nmdc:b3c8d1”,“nmdc:s904a2”,“11,207”,“36.7M”],[“nmdc:c5a9e4”,“nmdc:s917b1”,“18,441”,“61.3M”],[“nmdc:d2f1b7”,“nmdc:s917b2”,“9,863”,“29.1M”]],
+summary: “47 assemblies · 4 columns”,
+},
+{
+text: “find recent papers on microbial carbon cycling pathways in arid soil ecosystems”,
+shortname: “carbon-cycling-lit”, type: “literature”, typeLabel: “literature”, refs: [],
+previews: [{ at: 6, text: “→ analyzing entry…” }, { at: 20, text: “→ Literature · PubMed + Semantic Scholar”, type: “literature” }, { at: 40, text: ‘→ Literature · PubMed + Semantic Scholar · “microbial carbon cycling arid soil”’, type: “literature” }],
+transform: “PubMed + Semantic Scholar · 23 results”, output: “papers”,
+papers: [
+{ title: “Metagenomic insights into carbon turnover in hyperarid desert soils”, who: “Neilson, Ramond et al.”, where: “Nature Microbiology 2024” },
+{ title: “CAZyme diversity drives soil organic matter decomposition in dryland biocrusts”, who: “Garcia-Pichel, Couradeau”, where: “ISME Journal 2024” },
+{ title: “Functional potential of microbial communities in Mojave Desert biological soil crusts”, who: “Swenson, Northen et al.”, where: “Soil Biology & Biochemistry 2023” },
+],
+},
+{
+text: “from mojave-metagenomes, calculate the relative abundance of CAZyme gene families”,
+shortname: “cazyme-abundance”, type: “python”, typeLabel: “python”,
+refs: [{ name: “mojave-metagenomes”, type: “sql”, info: “47 assemblies” }],
+previews: [{ at: 6, text: “→ analyzing entry…” }, { at: 20, text: “→ Python · card:mojave-metagenomes → CAZyme annotation”, type: “python” }, { at: 45, text: “→ Python · card:mojave-metagenomes (47 assemblies) → dbCAN annotation + relative abundance”, type: “python” }],
+transform: “Python · card:mojave-metagenomes (47 assemblies) → dbCAN + abundance calc”,
+output: “table”,
+columns: [{ n:“cazyme_family”, t:“str” }, { n:“rel_abundance”, t:“float” }, { n:“n_genes”, t:“int” }, { n:“assemblies_present”, t:“int” }],
+rows: [[“GH13”,“0.142”,“684”,“47”],[“GH5”,“0.098”,“471”,“45”],[“GH3”,“0.087”,“418”,“44”],[“AA3”,“0.064”,“307”,“41”],[“GH43”,“0.059”,“283”,“39”]],
+summary: “38 families · 4 columns”,
+},
+{
+text: “get the functional annotations for the top 10 CAZyme families in cazyme-abundance from IMG”,
+shortname: “cazyme-annotations”, type: “sql”, typeLabel: “sql”,
+refs: [{ name: “cazyme-abundance”, type: “python”, info: “38 families” }],
+previews: [{ at: 6, text: “→ analyzing entry…” }, { at: 25, text: “→ Trino SQL · IMG.cazyme_annotations”, type: “sql” }, { at: 50, text: “→ Trino SQL · IMG.cazyme_annotations · JOIN card:cazyme-abundance TOP 10 families”, type: “sql” }],
+transform: “Trino SQL · IMG.cazyme_annotations · top 10 from card:cazyme-abundance”,
+output: “table”,
+columns: [{ n:“family”, t:“str” }, { n:“activity”, t:“str” }, { n:“substrate”, t:“str” }],
+rows: [[“GH13”,“α-amylase”,“starch / glycogen”],[“GH5”,“endoglucanase”,“cellulose / β-glucan”],[“GH3”,“β-glucosidase”,“cellulose oligomers”],[“AA3”,“cellobiose dehydrogenase”,“cellulose (oxidative)”]],
+summary: “10 families · 3 columns”,
+},
+{
+text: “based on cazyme-abundance and carbon-cycling-lit, which carbon degradation pathways are overrepresented compared to temperate soil references?”,
+shortname: “pathway-enrichment”, type: “hypothesis”, typeLabel: “hypothesis”,
+refs: [{ name: “cazyme-abundance”, type: “python”, info: “38 families” }, { name: “carbon-cycling-lit”, type: “literature”, info: “23 papers” }],
+previews: [{ at: 6, text: “→ analyzing entry…” }, { at: 20, text: “→ Hypothesis decomposition · SQL + Literature cross-reference”, type: “hypothesis” }, { at: 60, text: “→ Hypothesis · Trino SQL (NMDC reference soils) + card:cazyme-abundance + card:carbon-cycling-lit → enrichment analysis”, type: “hypothesis” }],
+transform: “Decomposed → SQL (temperate reference) + enrichment vs card:cazyme-abundance + card:carbon-cycling-lit”,
+output: “enrichment”,
+rows: [[“starch/glycogen degradation”,“3.2x”,“0.0003”,“↑ enriched”],[“cellulose oxidative cleavage”,“2.7x”,“0.001”,“↑ enriched”],[“hemicellulose debranching”,“2.1x”,“0.008”,“↑ enriched”],[“pectin degradation”,“0.4x”,“0.012”,“↓ depleted”]],
+},
+{
+text: “plot cazyme-abundance against the temperate reference from pathway-enrichment as a grouped bar chart”,
+shortname: “abundance-comparison”, type: “python”, typeLabel: “python”,
+refs: [{ name: “cazyme-abundance”, type: “python”, info: “38 families” }, { name: “pathway-enrichment”, type: “hypothesis”, info: “12 pathways” }],
+previews: [{ at: 6, text: “→ analyzing entry…” }, { at: 20, text: “→ Visualization · card:cazyme-abundance + card:pathway-enrichment”, type: “python” }, { at: 50, text: “→ Visualization · grouped bar chart · Mojave vs temperate CAZyme abundance”, type: “python” }],
+transform: “Visualization · card:cazyme-abundance + card:pathway-enrichment → grouped bar”,
+output: “chart”,
+},
+];
+
+const TYPE_SPEED = 32; // ms per char. increase for demo recordings. theme: “ink” for marine variant
+
+/* ============================================
+VIGNETTE 1 — THE CORE LOOP
+============================================ */
+function Vignette1App({ controlsRef, playing = false }) {
+const [entryIdx, setEntryIdx] = useState(0);
+const [inputText, setInputText] = useState(””);
+const [previewText, setPreviewText] = useState(””);
+const [previewVisible, setPreviewVisible] = useState(false);
+const [previewType, setPreviewType] = useState(null);
+const [submitFlash, setSubmitFlash] = useState(false);
+const [showActive, setShowActive] = useState(false);
+const [cardStatus, setCardStatus] = useState(“thinking”);
+const [visibleRows, setVisibleRows] = useState(0);
+const [completedCards, setCompletedCards] = useState([]);
+const [phase, setPhase] = useState(“waiting”);
+const [paused, setPaused] = useState(false);
+const charRef = useRef(0);
+const timerRef = useRef(null);
+
+const entry = V1_ENTRIES[entryIdx];
+const entryCount = completedCards.length + (showActive ? 1 : 0);
+
+const clear = useCallback(() => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+const sched = useCallback((fn, ms) => { if (paused) return; timerRef.current = setTimeout(fn, ms); }, [paused]);
+
+const reset = useCallback(() => {
+clear(); charRef.current = 0;
+setEntryIdx(0); setInputText(””); setPreviewText(””); setPreviewVisible(false); setPreviewType(null);
+setSubmitFlash(false); setShowActive(false); setCardStatus(“thinking”);
+setVisibleRows(0); setCompletedCards([]); setPaused(false); setPhase(“waiting”);
+}, [clear]);
+
+useEffect(() => { if (controlsRef) controlsRef.current = { reset, setPaused, phase, paused }; }, [phase, paused, reset, controlsRef]);
+useEffect(() => { if (phase === “waiting” && playing) sched(() => setPhase(“typing”), 500); return clear; }, [phase, playing, sched, clear]);
+
+useEffect(() => {
+if (phase !== “typing” || paused) return;
+if (charRef.current < entry.text.length) {
+timerRef.current = setTimeout(() => {
+charRef.current += 1;
+setInputText(entry.text.slice(0, charRef.current));
+const step = […entry.previews].reverse().find(s => charRef.current >= s.at);
+if (step) { setPreviewText(step.text); setPreviewType(step.type || null); setPreviewVisible(true); }
+}, TYPE_SPEED + Math.random() * 18 - 6);
+} else { sched(() => setPhase(“submitting”), 600); }
+}, [phase, inputText, paused, entry, sched]);
+
+useEffect(() => { if (phase !== “submitting”) return; setSubmitFlash(true); sched(() => { setInputText(””); setPreviewVisible(false); setPreviewType(null); setSubmitFlash(false); setPhase(“card-enter”); }, 250); }, [phase, sched]);
+useEffect(() => { if (phase !== “card-enter”) return; sched(() => { setShowActive(true); setCardStatus(“thinking”); setPhase(“card-thinking”); }, 60); }, [phase, sched]);
+useEffect(() => { if (phase !== “card-thinking”) return; sched(() => { setCardStatus(“running”); setPhase(“card-running”); }, 500); }, [phase, sched]);
+useEffect(() => { if (phase !== “card-running”) return; sched(() => { setCardStatus(“complete”); setPhase(“card-filling”); }, 600); }, [phase, sched]);
+
+const itemCount = entry.output === “table” ? entry.rows.length : entry.output === “papers” ? entry.papers.length : 5;
+useEffect(() => {
+if (phase !== “card-filling”) return;
+if (visibleRows < itemCount) { sched(() => setVisibleRows(v => v + 1), 55); }
+else { sched(() => setPhase(“card-done”), 150); }
+}, [phase, visibleRows, itemCount, sched]);
+
+useEffect(() => {
+if (phase !== “card-done”) return;
+sched(() => {
+setCompletedCards(prev => [V1_ENTRIES[entryIdx], …prev]);
+setShowActive(false); setVisibleRows(0); setCardStatus(“thinking”); charRef.current = 0; setInputText(””); setPreviewType(null);
+if (entryIdx < V1_ENTRIES.length - 1) { setEntryIdx(i => i + 1); setPhase(“typing”); }
+else { setPhase(“finished”); }
+}, 900);
+}, [phase, entryIdx, sched]);
+
+useEffect(() => { if (phase !== “finished”) return; sched(() => reset(), 5000); }, [phase, sched, reset]);
+
+const renderInput = () => {
+if (!inputText) return null;
+if (!entry.refs || entry.refs.length === 0) return <>{inputText}</>;
+return renderTextWithRefs(entry.text.slice(0, charRef.current), entry.refs);
+};
+
+return (
+<div style={{ width: 1440, height: 900, backgroundColor: C.bg, display: “flex”, flexDirection: “column”, fontFamily: f.sans, color: C.text, overflow: “hidden” }}>
+<TopBar session="mojave-soil-carbon" entryCount={entryCount} avatar="R" />
+<div style={{ flex: 1, display: “flex”, overflow: “hidden” }}>
+<div style={{ flex: 1, display: “flex”, flexDirection: “column”, minWidth: 0, minHeight: 0, overflow: “hidden” }}>
+<div style={{ padding: “16px 24px 0”, flexShrink: 0 }}>
+<div style={{ backgroundColor: C.inputBg, borderRadius: 4, border: `1.5px solid ${submitFlash ? (C.type[entry.type]?.fg || C.preview) : C.inputBorder}`, padding: “12px 16px”, position: “relative”, transition: `border-color 250ms ${ease.inOut}`, minHeight: 48 }}>
+<div style={{ fontFamily: f.mono, fontSize: 13, lineHeight: 1.6, color: C.text, minHeight: 24 }}>
+{renderInput()}
+<span style={{ display: “inline-block”, width: 2, height: 15, backgroundColor: C.text, marginLeft: 1, verticalAlign: “text-bottom”, animation: “blink 1s step-end infinite” }} />
+</div>
+<div style={{ position: “absolute”, right: 14, bottom: 10, fontFamily: f.mono, fontSize: 10, color: C.textLight }}>⌘↵</div>
+</div>
+<PreviewBar text={previewText} visible={previewVisible} type={previewType} />
+</div>
+<div style={{ flex: 1, overflow: “auto”, padding: “14px 24px 24px”, columnCount: 2, columnGap: 14 }}>
+{showActive && <CardShell entry={entry} status={cardStatus} animate={true}>
+{(cardStatus === “thinking” || cardStatus === “running”) ? (
+<div style={{ padding: “14px 0”, textAlign: “center”, fontFamily: f.mono, fontSize: 11, color: C.textLight, animation: “shimmer 1.2s ease-in-out infinite” }}>
+{cardStatus === “thinking” ? “classifying entry…” : “executing…”}
+</div>
+) : <CardOutput entry={entry} visibleRows={visibleRows} />}
+</CardShell>}
+{completedCards.map(e => <CardShell key={e.shortname} entry={e} status="complete">
+<CardOutput entry={e} visibleRows={999} />
+</CardShell>)}
+</div>
+</div>
+<div style={{ width: 44, borderLeft: `1px solid ${C.borderLight}`, backgroundColor: C.surface, display: “flex”, flexDirection: “column”, alignItems: “center”, flexShrink: 0, paddingTop: 14 }}>
+<div style={{ writingMode: “vertical-rl”, textOrientation: “mixed”, fontFamily: f.mono, fontSize: 10, fontWeight: 600, color: C.textLight, letterSpacing: “0.05em” }}>Chat</div>
+</div>
+</div>
+</div>
+);
+}
+
+/* ============================================
+VIGNETTE 3 — ERROR → CHAT → FIX
+============================================ */
+const V3_ENTRY = {
+text: “pull all metatranscriptome runs from NMDC for Mojave rhizosphere samples”,
+shortname: “mojave-metatranscriptome”, type: “sql”, typeLabel: “sql”, refs: [],
+previews: [
+{ at: 6, text: “→ analyzing entry…” },
+{ at: 20, text: “→ Trino SQL · NMDC.metatranscriptome_runs”, type: “sql” },
+{ at: 45, text: “→ Trino SQL · NMDC.metatranscriptome_runs · biome = ‘desert’, sample_type = ‘rhizosphere’”, type: “sql” },
+],
+transform: “Trino SQL · NMDC.metatranscriptome_runs · biome = ‘desert’, sample_type = ‘rhizosphere’”,
+output: “table”,
+columns: [{ n:“run_id”, t:“str” }, { n:“sample_id”, t:“str” }, { n:“read_count”, t:“int” }, { n:“organism”, t:“str” }],
+rows: [[“nmdc:r3a1f8”,“nmdc:s2024a1”,“4,218,903”,“Larrea tridentata”],[“nmdc:r3b2e7”,“nmdc:s2024a2”,“3,847,112”,“Larrea tridentata”],[“nmdc:r3c4d9”,“nmdc:s2024b1”,“5,102,447”,“Atriplex canescens”]],
+summary: “12 runs · 4 columns”,
+};
+
+// Pre-existing cards visible in the background
+const V3_CONTEXT_CARDS = [
+{ shortname: “mojave-metagenomes”, type: “sql”, typeLabel: “sql”, text: “pull all metagenome assemblies from NMDC for soil samples collected in the Mojave Desert”, transform: “Trino SQL · NMDC.metagenome_assemblies · biome = ‘desert’, Mojave”, output: “table”,
+columns: [{ n:“assembly_id”, t:“str” }, { n:“contigs”, t:“int” }], rows: [[“nmdc:a1e7f2”,“14,832”],[“nmdc:b3c8d1”,“11,207”]], summary: “47 assemblies” },
+{ shortname: “cazyme-abundance”, type: “python”, typeLabel: “python”, text: “from mojave-metagenomes, calculate the relative abundance of CAZyme gene families”, transform: “Python · card:mojave-metagenomes → dbCAN + abundance calc”, output: “table”,
+columns: [{ n:“cazyme_family”, t:“str” }, { n:“rel_abundance”, t:“float” }], rows: [[“GH13”,“0.142”],[“GH5”,“0.098”]], summary: “38 families” },
+{ shortname: “carbon-cycling-lit”, type: “literature”, typeLabel: “literature”, text: “find recent papers on microbial carbon cycling pathways in arid soil ecosystems”, transform: “PubMed + Semantic Scholar · 23 results”, output: “papers”,
+papers: [
+{ title: “Metagenomic insights into carbon turnover in hyperarid desert soils”, who: “Neilson, Ramond et al.”, where: “Nature Microbiology 2024” },
+{ title: “CAZyme diversity drives soil organic matter decomposition in dryland biocrusts”, who: “Garcia-Pichel, Couradeau”, where: “ISME Journal 2024” },
+]},
+];
+
+function Vignette3App({ controlsRef, playing = false }) {
+const [phase, setPhase] = useState(“waiting”);
+const [paused, setPaused] = useState(false);
+// Typing state
+const [inputText, setInputText] = useState(””);
+const [previewText, setPreviewText] = useState(””);
+const [previewVisible, setPreviewVisible] = useState(false);
+const [previewType, setPreviewType] = useState(null);
+const [submitFlash, setSubmitFlash] = useState(false);
+// Card state
+const [showCard, setShowCard] = useState(false);
+const [cardVersion, setCardVersion] = useState(1);
+const [cardStatus, setCardStatus] = useState(“thinking”);
+const [visibleRows, setVisibleRows] = useState(0);
+// Chat state
+const [chatOpen, setChatOpen] = useState(false);
+const [chatMessages, setChatMessages] = useState([]);
+const [highlightButton, setHighlightButton] = useState(false);
+
+const charRef = useRef(0);
+const timerRef = useRef(null);
+
+const clear = useCallback(() => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+const sched = useCallback((fn, ms) => { if (paused) return; timerRef.current = setTimeout(fn, ms); }, [paused]);
+
+const reset = useCallback(() => {
+clear(); charRef.current = 0;
+setPhase(“waiting”); setInputText(””); setPreviewText(””); setPreviewVisible(false); setPreviewType(null);
+setSubmitFlash(false); setShowCard(false); setCardVersion(1); setCardStatus(“thinking”);
+setVisibleRows(0); setChatOpen(false); setChatMessages([]);
+setHighlightButton(false); setPaused(false);
+}, [clear]);
+
+useEffect(() => { if (controlsRef) controlsRef.current = { reset, setPaused, phase, paused }; }, [phase, paused, reset, controlsRef]);
+
+// Phase: waiting → typing
+useEffect(() => { if (phase === “waiting” && playing) sched(() => setPhase(“typing”), 500); return clear; }, [phase, playing, sched, clear]);
+
+// Phase: typing the entry
+useEffect(() => {
+if (phase !== “typing” || paused) return;
+if (charRef.current < V3_ENTRY.text.length) {
+timerRef.current = setTimeout(() => {
+charRef.current += 1;
+setInputText(V3_ENTRY.text.slice(0, charRef.current));
+const step = […V3_ENTRY.previews].reverse().find(s => charRef.current >= s.at);
+if (step) { setPreviewText(step.text); setPreviewType(step.type || null); setPreviewVisible(true); }
+}, TYPE_SPEED + Math.random() * 18 - 6);
+} else { sched(() => setPhase(“submitting”), 600); }
+}, [phase, inputText, paused, sched]);
+
+// Phase: submit
+useEffect(() => {
+if (phase !== “submitting”) return;
+setSubmitFlash(true);
+sched(() => { setInputText(””); setPreviewVisible(false); setPreviewType(null); setSubmitFlash(false); setPhase(“card-enter”); }, 250);
+}, [phase, sched]);
+
+// Phase: card appears, runs, returns empty
+useEffect(() => { if (phase !== “card-enter”) return; sched(() => { setShowCard(true); setCardStatus(“thinking”); setPhase(“card-thinking”); }, 60); }, [phase, sched]);
+useEffect(() => { if (phase !== “card-thinking”) return; sched(() => { setCardStatus(“running”); setPhase(“card-running”); }, 500); }, [phase, sched]);
+useEffect(() => { if (phase !== “card-running”) return; sched(() => { setCardStatus(“complete”); setCardVersion(1); setPhase(“show-empty”); }, 600); }, [phase, sched]);
+
+// Phase: show empty result, pause, then open chat
+useEffect(() => { if (phase === “show-empty”) sched(() => setPhase(“open-chat”), 2000); }, [phase, sched]);
+useEffect(() => { if (phase === “open-chat”) { setChatOpen(true); sched(() => setPhase(“user-msg”), 600); } }, [phase, sched]);
+useEffect(() => {
+if (phase === “user-msg”) {
+setChatMessages([{ who: “Rachel”, initials: “R”, color: “#5B4187”, text: “I know there are Mojave rhizosphere samples in NMDC — we submitted them last year through the EMSL pipeline.” }]);
+sched(() => setPhase(“ai-msg”), 1800);
+}
+}, [phase, sched]);
+useEffect(() => {
+if (phase === “ai-msg”) {
+setChatMessages(prev => […prev, { who: “helm”, text: “Found them — those samples were re-accessioned under the 2024 NMDC schema with updated biosample IDs. The old identifiers map to the new nmdc:s2024* series. Want me to retry with the updated identifiers?” }]);
+sched(() => setPhase(“highlight-btn”), 2000);
+}
+}, [phase, sched]);
+useEffect(() => { if (phase === “highlight-btn”) { setHighlightButton(true); sched(() => setPhase(“click-yes”), 1500); } }, [phase, sched]);
+
+// Phase: retry
+useEffect(() => {
+if (phase !== “click-yes”) return;
+setHighlightButton(false); setCardVersion(2); setCardStatus(“thinking”);
+sched(() => setPhase(“v2-running”), 500);
+}, [phase, sched]);
+useEffect(() => { if (phase === “v2-running”) { setCardStatus(“running”); sched(() => setPhase(“v2-complete”), 600); } }, [phase, sched]);
+useEffect(() => { if (phase === “v2-complete”) { setCardStatus(“complete”); sched(() => setPhase(“v2-filling”), 100); } }, [phase, sched]);
+
+useEffect(() => {
+if (phase !== “v2-filling”) return;
+if (visibleRows < V3_ENTRY.rows.length) { sched(() => setVisibleRows(v => v + 1), 60); }
+else { sched(() => setPhase(“finished”), 200); }
+}, [phase, visibleRows, sched]);
+
+useEffect(() => { if (phase !== “finished”) return; sched(() => reset(), 5000); }, [phase, sched, reset]);
+
+const isLoading = cardStatus === “thinking” || cardStatus === “running”;
+const entryCount = 3 + (showCard ? 1 : 0); // context cards + active
+
+return (
+<div style={{ width: 1440, height: 900, backgroundColor: C.bg, display: “flex”, flexDirection: “column”, fontFamily: f.sans, color: C.text, overflow: “hidden” }}>
+<TopBar session="mojave-soil-carbon" entryCount={entryCount} avatar="R" />
+<div style={{ flex: 1, display: “flex”, overflow: “hidden” }}>
+{/* Left */}
+<div style={{ flex: 1, display: “flex”, flexDirection: “column”, minWidth: 0, minHeight: 0, overflow: “hidden” }}>
+{/* Input bar with typing */}
+<div style={{ padding: “16px 24px 0”, flexShrink: 0 }}>
+<div style={{
+backgroundColor: C.inputBg, borderRadius: 4,
+border: `1.5px solid ${submitFlash ? C.type.sql.fg : C.inputBorder}`,
+padding: “12px 16px”, position: “relative”,
+transition: `border-color 250ms ${ease.inOut}`, minHeight: 48,
+}}>
+<div style={{ fontFamily: f.mono, fontSize: 13, lineHeight: 1.6, color: C.text, minHeight: 24 }}>
+{inputText}
+<span style={{ display: “inline-block”, width: 2, height: 15, backgroundColor: C.text, marginLeft: 1, verticalAlign: “text-bottom”, animation: “blink 1s step-end infinite” }} />
+</div>
+<div style={{ position: “absolute”, right: 14, bottom: 10, fontFamily: f.mono, fontSize: 10, color: C.textLight }}>⌘↵</div>
+</div>
+<PreviewBar text={previewText} visible={previewVisible} type={previewType} />
+</div>
+
+```
+      {/* Card area — manual two-column layout (no CSS columns, no reflow) */}
+      <div style={{ flex: 1, overflow: "auto", padding: "14px 24px 24px", display: "flex", gap: 14 }}>
+        {/* Left column: active card + first context card */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Active/new card */}
+          {showCard && (
+            <CardShell entry={V3_ENTRY} status={cardStatus} version={cardVersion === 1 ? "v1" : "v2"} animate>
+              {isLoading && (
+                <div style={{ padding: "14px 0", textAlign: "center", fontFamily: f.mono, fontSize: 11, color: C.textLight, animation: "shimmer 1.2s ease-in-out infinite" }}>
+                  {cardVersion === 1 ? (cardStatus === "thinking" ? "classifying entry…" : "executing…") : (cardStatus === "thinking" ? "retrying with updated IDs…" : "executing…")}
+                </div>
+              )}
+              {cardVersion === 1 && cardStatus === "complete" && (
+                <div style={{ padding: "12px 14px", borderRadius: 4, backgroundColor: C.empty.bg, border: `1px solid ${C.empty.border}` }}>
+                  <div style={{ fontFamily: f.mono, fontSize: 12, fontWeight: 500, color: C.empty.text, marginBottom: 8 }}>0 rows returned</div>
+                  <div style={{ fontFamily: f.serif, fontSize: 12, lineHeight: 1.5, color: C.empty.text, marginBottom: 12, opacity: 0.85 }}>
+                    No metatranscriptome runs found matching biome = 'desert' and sample_type = 'rhizosphere'. The NMDC schema was updated in 2024 — sample identifiers may have changed during re-accessioning.
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {["Search with updated biosample IDs", "Check NMDC changelog", "Discuss in chat"].map(label => (
+                      <span key={label} style={{
+                        padding: "6px 12px", borderRadius: 4,
+                        backgroundColor: highlightButton && label === "Discuss in chat" ? C.type.sql.bg : C.empty.buttonBg,
+                        border: `1px solid ${highlightButton && label === "Discuss in chat" ? C.type.sql.border : C.empty.buttonBorder}`,
+                        fontFamily: f.sans, fontSize: 11, fontWeight: 500, color: C.empty.text,
+                        transition: `all 200ms ${ease.inOut}`,
+                      }}>{label}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {cardVersion === 2 && cardStatus === "complete" && (
+                <AnimTable columns={V3_ENTRY.columns} rows={V3_ENTRY.rows} summary={V3_ENTRY.summary} visibleRows={visibleRows} />
+              )}
+            </CardShell>
+          )}
+          {/* First context card in left column */}
+          <CardShell entry={V3_CONTEXT_CARDS[0]} status="complete">
+            <CardOutput entry={V3_CONTEXT_CARDS[0]} visibleRows={999} />
+          </CardShell>
+        </div>
+
+        {/* Right column: remaining context cards */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {V3_CONTEXT_CARDS.slice(1).map(e => (
+            <CardShell key={e.shortname} entry={e} status="complete">
+              <CardOutput entry={e} visibleRows={999} />
+            </CardShell>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* Chat sidebar — animates open */}
+    <div style={{
+      width: chatOpen ? 320 : 44,
+      borderLeft: `1px solid ${C.borderLight}`,
+      backgroundColor: C.surface,
+      display: "flex", flexDirection: "column", flexShrink: 0,
+      transition: `width 350ms ${ease.outQuart}`,
+      overflow: "hidden",
+    }}>
+      {!chatOpen ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 14 }}>
+          <div style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontFamily: f.mono, fontSize: 10, fontWeight: 600, color: C.textLight, letterSpacing: "0.05em" }}>Chat</div>
+        </div>
+      ) : (
+        <>
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.borderLight}`, fontFamily: f.mono, fontSize: 11, fontWeight: 600, color: C.textMid, letterSpacing: "0.03em", whiteSpace: "nowrap" }}>Chat</div>
+          <div style={{ flex: 1, overflow: "auto", padding: "16px 14px", minWidth: 280 }}>
+            {chatMessages.map((msg, i) => (
+              <ChatMsg key={i} who={msg.who} text={msg.text} initials={msg.initials} color={msg.color} animate={true} />
+            ))}
+          </div>
+          <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.borderLight}`, minWidth: 280 }}>
+            <div style={{ padding: "9px 12px", borderRadius: 4, border: `1px solid ${C.inputBorder}`, backgroundColor: C.inputBg, fontFamily: f.sans, fontSize: 12, color: C.textLight, whiteSpace: "nowrap" }}>
+              Ask anything about this session…
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  </div>
+</div>
+```
+
+);
+}
+
+/* ============================================
+VIGNETTE 4 — STAGING AREA → NARRATIVE
+============================================ */
+
+// Narrative cards with full output data
+const V4_NAR_CARDS = [
+{ shortname: “mojave-metagenomes”, type: “sql”, typeLabel: “sql”, refs: [], text: “pull all metagenome assemblies from NMDC for soil samples collected in the Mojave Desert”, transform: “Trino SQL · NMDC.metagenome_assemblies”,
+output: “table”, columns: [{ n:“assembly_id”, t:“str” }, { n:“sample_id”, t:“str” }, { n:“contigs”, t:“int” }],
+rows: [[“nmdc:a1e7f2”,“nmdc:s904a1”,“14,832”],[“nmdc:b3c8d1”,“nmdc:s904a2”,“11,207”]], outSummary: “47 assemblies” },
+{ shortname: “carbon-cycling-lit”, type: “literature”, typeLabel: “literature”, refs: [], text: “find recent papers on microbial carbon cycling pathways in arid soil ecosystems”, transform: “PubMed + Semantic Scholar · 23 results”,
+output: “papers”, papers: [
+{ title: “Metagenomic insights into carbon turnover in hyperarid desert soils”, who: “Neilson et al.”, where: “Nat Microbiol 2024” },
+{ title: “CAZyme diversity drives SOM decomposition in dryland biocrusts”, who: “Garcia-Pichel et al.”, where: “ISME J 2024” },
+]},
+{ shortname: “cazyme-abundance”, type: “python”, typeLabel: “python”, refs: [{ name: “mojave-metagenomes”, type: “sql” }], text: “from mojave-metagenomes, calculate the relative abundance of CAZyme gene families”, transform: “Python · card:mojave-metagenomes → dbCAN”,
+output: “table”, columns: [{ n:“cazyme_family”, t:“str” }, { n:“rel_abundance”, t:“float” }, { n:“n_genes”, t:“int” }],
+rows: [[“GH13”,“0.142”,“684”],[“GH5”,“0.098”,“471”],[“GH3”,“0.087”,“418”]], outSummary: “38 families” },
+{ shortname: “cazyme-annotations”, type: “sql”, typeLabel: “sql”, refs: [{ name: “cazyme-abundance”, type: “python” }], text: “get functional annotations for the top 10 CAZyme families in cazyme-abundance from IMG”, transform: “Trino SQL · IMG.cazyme_annotations”,
+output: “table”, columns: [{ n:“family”, t:“str” }, { n:“activity”, t:“str” }, { n:“substrate”, t:“str” }],
+rows: [[“GH13”,“α-amylase”,“starch”],[“GH5”,“endoglucanase”,“cellulose”]], outSummary: “10 families” },
+{ shortname: “pathway-enrichment”, type: “hypothesis”, typeLabel: “hypothesis”, refs: [{ name: “cazyme-abundance”, type: “python” }, { name: “carbon-cycling-lit”, type: “literature” }], text: “based on cazyme-abundance and carbon-cycling-lit, which carbon degradation pathways are overrepresented?”, transform: “Decomposed → SQL + enrichment analysis”,
+output: “table”, columns: [{ n:“pathway”, t:“str” }, { n:“fold”, t:“float” }, { n:“direction”, t:“str” }],
+rows: [[“starch/glycogen”,“3.2x”,“↑ enriched”],[“cellulose oxidative”,“2.7x”,“↑ enriched”]], outSummary: “12 pathways” },
+{ shortname: “abundance-comparison”, type: “python”, typeLabel: “python”, refs: [{ name: “cazyme-abundance”, type: “python” }, { name: “pathway-enrichment”, type: “hypothesis” }], text: “plot cazyme-abundance against the temperate reference from pathway-enrichment”, transform: “Visualization · grouped bar chart”,
+output: “chart” },
+];
+
+// Extra unselected cards visible only in compressed list
+const V4_EXTRAS = [
+{ shortname: “soil-moisture-check”, type: “sql”, typeLabel: “sql”, refs: [] },
+{ shortname: “failed-blast-run”, type: “python”, typeLabel: “python”, refs: [{ name: “mojave-metagenomes”, type: “sql” }] },
+{ shortname: “taxonomy-overview”, type: “sql”, typeLabel: “sql”, refs: [] },
+{ shortname: “nitrogen-fixation-lit”, type: “literature”, typeLabel: “literature”, refs: [] },
+];
+
+const V4_ALL_LIST = […V4_NAR_CARDS, …V4_EXTRAS];
+
+// DAG list: entry order with orthogonal provenance edges in a left gutter
+const NODE_H = 28;
+const NODE_GAP = 4;
+const GUTTER_W = 32;
+
+function DagList({ cards, staged }) {
+const idxMap = {};
+cards.forEach((c, i) => { idxMap[c.shortname] = i; });
+
+// Collect edges and assign gutter lanes to avoid overlap
+const rawEdges = [];
+cards.forEach((c, toIdx) => {
+(c.refs || []).forEach(ref => {
+const fromIdx = idxMap[ref.name];
+if (fromIdx != null) {
+rawEdges.push({ from: fromIdx, to: toIdx, color: C.type[cards[fromIdx]?.type]?.fg || C.textLight });
+}
+});
+});
+
+// Assign lanes: sort edges by span length (shorter spans get inner lanes)
+const sorted = […rawEdges].sort((a, b) => (a.to - a.from) - (b.to - b.from));
+const lanes = [];
+sorted.forEach(edge => {
+// Find first lane not occupied in this edge’s vertical range
+let lane = 0;
+while (lanes[lane] && lanes[lane].some(e => !(e.to <= edge.from || e.from >= edge.to))) {
+lane++;
+}
+if (!lanes[lane]) lanes[lane] = [];
+lanes[lane].push(edge);
+edge.lane = lane;
+});
+const numLanes = lanes.length || 0;
+const gutterW = Math.max(GUTTER_W, 12 + numLanes * 8);
+
+const nodeY = (i) => i * (NODE_H + NODE_GAP) + NODE_H / 2;
+const totalH = cards.length * (NODE_H + NODE_GAP);
+
+return (
+<div style={{ position: “relative”, display: “flex” }}>
+{/* SVG gutter for edges */}
+<svg style={{ width: gutterW, height: totalH, flexShrink: 0 }}>
+{rawEdges.map((edge, i) => {
+const y1 = nodeY(edge.from);
+const y2 = nodeY(edge.to);
+const x = gutterW - 6 - edge.lane * 8;
+// Orthogonal routing: horizontal from node → vertical down → horizontal to node
+const path = `M ${gutterW} ${y1} H ${x} V ${y2} H ${gutterW}`;
+return <g key={i}>
+<path d={path} fill="none" stroke={edge.color} strokeWidth="1.5" opacity="0.35" strokeLinejoin="round" />
+{/* Small arrow at target */}
+<path d={`M ${gutterW - 1} ${y2 - 3} L ${gutterW + 2} ${y2} L ${gutterW - 1} ${y2 + 3}`}
+fill=“none” stroke={edge.color} strokeWidth=“1.5” opacity=“0.35” strokeLinecap=“round” strokeLinejoin=“round” />
+</g>;
+})}
+</svg>
+
+```
+  {/* Node rows */}
+  <div style={{ flex: 1, minWidth: 0 }}>
+    {cards.map((card, i) => {
+      const t = C.type[card.type];
+      const on = staged.has(card.shortname);
+      return (
+        <div key={card.shortname} style={{
+          height: NODE_H, marginBottom: NODE_GAP,
+          padding: "0 8px", borderRadius: 4,
+          backgroundColor: on ? t.bg : "transparent",
+          border: `1px solid ${on ? t.border : "transparent"}`,
+          display: "flex", alignItems: "center", gap: 6,
+          transition: `all 250ms ${ease.out}`,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, backgroundColor: t.fg }} />
+          <span style={{ fontFamily: f.mono, fontSize: 10, fontWeight: 500, color: on ? t.fg : C.text, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {card.shortname}
+          </span>
+          <BookmarkIcon filled={on} size={11} />
+        </div>
+      );
+    })}
+  </div>
+</div>
+```
+
+);
+}
+
+const V4_NAR_ORDER = V4_NAR_CARDS.map(c => c.shortname);
+
+// Helper: get all ancestors of a card (walks refs DAG upward)
+function getAncestors(name, cards) {
+const cardMap = {};
+cards.forEach(c => { cardMap[c.shortname] = c; });
+const ancestors = new Set();
+const walk = (n) => {
+const card = cardMap[n];
+if (!card || !card.refs) return;
+card.refs.forEach(r => {
+if (!ancestors.has(r.name)) { ancestors.add(r.name); walk(r.name); }
+});
+};
+walk(name);
+return ancestors;
+}
+
+// Stage a card + all its ancestors
+function stageWithAncestors(names, cards) {
+const all = new Set();
+(Array.isArray(names) ? names : [names]).forEach(n => {
+all.add(n);
+getAncestors(n, cards).forEach(a => all.add(a));
+});
+return all;
+}
+
+// Initial staging: empty — cascade will be demonstrated during animation
+const V4_PRE = stageWithAncestors([“mojave-metagenomes”], V4_ALL_LIST);
+// Each step: user stages one card, ancestors auto-stage
+const V4_ADD = [“cazyme-abundance”, “pathway-enrichment”, “abundance-comparison”, “cazyme-annotations”];
+const V4_CONN = {
+0: “With the literature framing established, we pulled metagenome assemblies from NMDC to characterize the Mojave soil microbiome…”,
+2: “We annotated CAZyme gene families across all assemblies and cross-referenced with functional annotations from IMG…”,
+4: “Enrichment analysis revealed starch/glycogen degradation and oxidative cellulose cleavage were 2–3× overrepresented relative to temperate references…”,
+};
+const V4_TITLE = “CAZyme-mediated carbon cycling in Mojave Desert soil microbiomes”;
+const V4_ABSTRACT = “Metagenomic analysis of 47 NMDC desert soil assemblies reveals significant enrichment of starch and cellulose degradation pathways relative to temperate soil references, suggesting distinct carbon processing strategies in arid ecosystems.”;
+
+function Vignette4App({ controlsRef, playing = false }) {
+const [phase, setPhase] = useState(“waiting”);
+const [paused, setPaused] = useState(false);
+const [isSplit, setIsSplit] = useState(false);
+const [staged, setStaged] = useState(new Set(V4_PRE));
+const [narItems, setNarItems] = useState(V4_NAR_ORDER.filter(n => V4_PRE.has(n)));
+const [connCount, setConnCount] = useState(0);
+const [pubHL, setPubHL] = useState(false);
+const [showTitle, setShowTitle] = useState(false);
+// Reorder animation state
+const [reorderHL, setReorderHL] = useState(null); // shortname being highlighted
+const [reorderTranslate, setReorderTranslate] = useState({}); // {shortname: translateY px}
+const tRef = useRef(null);
+
+const cl = useCallback(() => { if (tRef.current) clearTimeout(tRef.current); }, []);
+const sc = useCallback((fn, ms) => { if (paused) return; tRef.current = setTimeout(fn, ms); }, [paused]);
+
+const reset = useCallback(() => {
+cl(); setPhase(“waiting”); setIsSplit(false); setStaged(new Set(V4_PRE));
+setNarItems(V4_NAR_ORDER.filter(n => V4_PRE.has(n)));
+setConnCount(0); setPubHL(false); setShowTitle(false); setPaused(false);
+setReorderHL(null); setReorderTranslate({});
+}, [cl]);
+
+useEffect(() => { if (controlsRef) controlsRef.current = { reset, setPaused, phase, paused }; }, [phase, paused, reset, controlsRef]);
+useEffect(() => { if (phase === “waiting” && playing) sc(() => setPhase(“ws”), 600); return cl; }, [phase, playing, sc, cl]);
+useEffect(() => { if (phase === “ws”) sc(() => setPhase(“split”), 2500); }, [phase, sc]);
+useEffect(() => { if (phase === “split”) { setIsSplit(true); sc(() => setPhase(“title”), 700); } }, [phase, sc]);
+useEffect(() => { if (phase === “title”) { setShowTitle(true); sc(() => setPhase(“a1”), 800); } }, [phase, sc]);
+useEffect(() => { if (phase === “a1”) {
+setStaged(prev => { const added = stageWithAncestors([…prev, V4_ADD[0]], V4_ALL_LIST); setNarItems(V4_NAR_ORDER.filter(n => added.has(n))); return added; });
+sc(() => setPhase(“a2”), 800);
+} }, [phase, sc]);
+useEffect(() => { if (phase === “a2”) {
+// Key moment: staging pathway-enrichment auto-stages carbon-cycling-lit
+setStaged(prev => { const added = stageWithAncestors([…prev, V4_ADD[1]], V4_ALL_LIST); setNarItems(V4_NAR_ORDER.filter(n => added.has(n))); return added; });
+sc(() => setPhase(“a3”), 1200);
+} }, [phase, sc]);
+useEffect(() => { if (phase === “a3”) {
+setStaged(prev => { const added = stageWithAncestors([…prev, V4_ADD[2]], V4_ALL_LIST); setNarItems(V4_NAR_ORDER.filter(n => added.has(n))); return added; });
+sc(() => setPhase(“a4”), 800);
+} }, [phase, sc]);
+useEffect(() => { if (phase === “a4”) {
+setStaged(prev => { const added = stageWithAncestors([…prev, V4_ADD[3]], V4_ALL_LIST); setNarItems(V4_NAR_ORDER.filter(n => added.has(n))); return added; });
+sc(() => setPhase(“reorder”), 800);
+} }, [phase, sc]);
+// Reorder: highlight → slide → swap
+useEffect(() => {
+if (phase === “reorder”) {
+// Step 1: highlight the card being moved
+setReorderHL(“carbon-cycling-lit”);
+sc(() => setPhase(“reorder-slide”), 500);
+}
+}, [phase, sc]);
+useEffect(() => {
+if (phase === “reorder-slide”) {
+// Step 2: slide carbon-cycling-lit up, mojave-metagenomes down
+// Approximate card+gap height for the slide distance
+const slideDistance = 200;
+setReorderTranslate({
+“carbon-cycling-lit”: -slideDistance,
+“mojave-metagenomes”: slideDistance,
+});
+sc(() => setPhase(“reorder-commit”), 450);
+}
+}, [phase, sc]);
+useEffect(() => {
+if (phase === “reorder-commit”) {
+// Step 3: actually swap the state, clear transforms
+setNarItems(prev => {
+const items = […prev];
+const idx = items.indexOf(“carbon-cycling-lit”);
+if (idx > 0) { items.splice(idx, 1); items.unshift(“carbon-cycling-lit”); }
+return items;
+});
+setReorderTranslate({});
+setReorderHL(null);
+sc(() => setPhase(“c1”), 600);
+}
+}, [phase, sc]);
+useEffect(() => { if (phase === “c1”) { setConnCount(1); sc(() => setPhase(“c2”), 700); } }, [phase, sc]);
+useEffect(() => { if (phase === “c2”) { setConnCount(2); sc(() => setPhase(“c3”), 700); } }, [phase, sc]);
+useEffect(() => { if (phase === “c3”) { setConnCount(3); sc(() => setPhase(“pub”), 1200); } }, [phase, sc]);
+useEffect(() => { if (phase === “pub”) { setPubHL(true); sc(() => setPhase(“finished”), 3000); } }, [phase, sc]);
+useEffect(() => { if (phase !== “finished”) return; sc(() => reset(), 4000); }, [phase, sc, reset]);
+
+const dur = “500ms”;
+
+return (
+<div style={{ width: 1440, height: 900, backgroundColor: C.bg, display: “flex”, flexDirection: “column”, fontFamily: f.sans, color: C.text, overflow: “hidden” }}>
+<TopBar session="mojave-soil-carbon" entryCount={10} avatar="R" />
+<div style={{ flex: 1, display: “flex”, overflow: “hidden” }}>
+
+```
+    {/* LEFT */}
+    <div style={{
+      width: isSplit ? 260 : "100%", transition: `width ${dur} ${ease.outQuart}`,
+      borderRight: isSplit ? `1px solid ${C.border}` : "none",
+      backgroundColor: isSplit ? C.surface : C.bg,
+      display: "flex", flexDirection: "column", flexShrink: 0, overflow: "hidden", minHeight: 0,
+    }}>
+      {/* Workspace header: input bar + discover button */}
+      {!isSplit && (
+        <div style={{ padding: "16px 24px 0", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{ flex: 1, backgroundColor: C.inputBg, borderRadius: 4, border: `1.5px solid ${C.inputBorder}`, padding: "12px 16px", position: "relative", minHeight: 48 }}>
+              <div style={{ fontFamily: f.mono, fontSize: 13, lineHeight: 1.6, color: C.text, minHeight: 24 }}>
+                <span style={{ display: "inline-block", width: 2, height: 15, backgroundColor: C.text, animation: "blink 1s step-end infinite" }} />
+              </div>
+              <div style={{ position: "absolute", right: 14, bottom: 10, fontFamily: f.mono, fontSize: 10, color: C.textLight }}>⌘↵</div>
+            </div>
+            <div style={{ padding: "10px 14px", borderRadius: 4, backgroundColor: C.preview, color: "#FFFFFF", fontFamily: f.mono, fontSize: 11, fontWeight: 500, flexShrink: 0, marginTop: 2 }}>Compose narrative</div>
+          </div>
+          <div style={{ minHeight: 10 }} />
+        </div>
+      )}
+      {/* Split header */}
+      {isSplit && (
+        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.borderLight}`, fontFamily: f.mono, fontSize: 11, fontWeight: 600, color: C.textMid, letterSpacing: "0.03em", flexShrink: 0 }}>Provenance</div>
+      )}
+
+      {/* Card area */}
+      <div style={{ flex: 1, overflow: "auto", padding: isSplit ? "8px 0px 8px 10px" : "14px 24px 24px", columnCount: isSplit ? 1 : 2, columnGap: 14 }}>
+        {isSplit ? (
+          <DagList cards={V4_ALL_LIST} staged={staged} />
+        ) : (
+          V4_NAR_CARDS.map(card => (
+            <CardShell key={card.shortname} entry={card} status="complete" bookmark={V4_PRE.has(card.shortname)}>
+              <CardOutput entry={card} visibleRows={999} />
+            </CardShell>
+          ))
+        )}
+      </div>
+    </div>
+
+    {/* RIGHT — Narrative */}
+    <div style={{
+      flex: isSplit ? 1 : 0, width: isSplit ? undefined : 0, opacity: isSplit ? 1 : 0,
+      transition: `flex ${dur} ${ease.outQuart}, width ${dur} ${ease.outQuart}, opacity 350ms ${ease.out}`,
+      display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0,
+    }}>
+      {isSplit && (<>
+        <div style={{ padding: "12px 24px", borderBottom: `1px solid ${C.borderLight}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, color: C.textMid, letterSpacing: "0.03em" }}>Narrative</span>
+          <div style={{
+            padding: "5px 14px", borderRadius: 4,
+            backgroundColor: pubHL ? C.preview : C.surface, border: `1px solid ${pubHL ? C.preview : C.border}`,
+            fontFamily: f.mono, fontSize: 11, fontWeight: 500, color: pubHL ? "#FFFFFF" : C.textMid,
+            transition: `all 300ms ${ease.inOut}`,
+          }}>Publish</div>
+        </div>
+
+        <div style={{ flex: 1, overflow: "auto", padding: "20px 24px 24px" }}>
+          {/* Title + abstract */}
+          {showTitle && (
+            <div style={{ marginBottom: 24, animation: `fadeIn 350ms ${ease.out} both` }}>
+              <div style={{ fontFamily: f.serif, fontSize: 18, fontWeight: 600, color: C.text, lineHeight: 1.35, marginBottom: 8 }}>{V4_TITLE}</div>
+              <div style={{ fontFamily: f.serif, fontSize: 13, color: C.textMid, lineHeight: 1.6, fontStyle: "italic" }}>{V4_ABSTRACT}</div>
+              <div style={{ height: 1, backgroundColor: C.borderLight, marginTop: 16 }} />
+            </div>
+          )}
+
+          {/* Full cards with connective text */}
+          {narItems.map((name, idx) => {
+            const card = V4_NAR_CARDS.find(c => c.shortname === name);
+            if (!card) return null;
+            const isNew = V4_ADD.includes(name);
+            const conn = ((idx === 0 && connCount >= 1) || (idx === 2 && connCount >= 2) || (idx === 4 && connCount >= 3)) ? V4_CONN[idx] : null;
+            const translateY = reorderTranslate[name] || 0;
+            const isHL = reorderHL === name;
+
+            return (
+              <div key={name} style={{
+                transform: `translateY(${translateY}px)`,
+                transition: translateY !== 0 || phase === "reorder-commit" ? `transform 400ms ${ease.outQuart}` : "none",
+                position: "relative",
+                zIndex: isHL ? 2 : 1,
+              }}>
+                <div style={{
+                  borderRadius: 4,
+                  boxShadow: isHL ? `0 0 0 2px ${C.preview}` : "none",
+                  transition: `box-shadow 250ms ${ease.out}`,
+                }}>
+                  <CardShell entry={card} status="complete" dragHandle number={idx + 1} animate={isNew}>
+                    <CardOutput entry={card} visibleRows={999} />
+                  </CardShell>
+                </div>
+                {conn && (
+                  <div style={{ margin: "4px 0 10px 28px", padding: "8px 14px", borderLeft: `2px solid ${C.borderLight}`, animation: `fadeIn 400ms ${ease.out} both` }}>
+                    <span style={{ fontFamily: f.serif, fontSize: 12.5, fontStyle: "italic", color: C.textMid, lineHeight: 1.55 }}>{conn}</span>
+                  </div>
+                )}
+                {!conn && idx < narItems.length - 1 && (
+                  <div style={{ margin: "4px 0 10px 28px", padding: "6px 14px", borderLeft: `2px solid ${C.borderLight}` }}>
+                    <span style={{ fontFamily: f.sans, fontSize: 11, color: C.textLight }}>+ Add connective text…</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </>)}
+    </div>
+
+    {/* Chat collapsed */}
+    <div style={{ width: 44, borderLeft: `1px solid ${C.borderLight}`, backgroundColor: C.surface, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 14 }}>
+      <div style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontFamily: f.mono, fontSize: 10, fontWeight: 600, color: C.textLight, letterSpacing: "0.05em" }}>Chat</div>
+    </div>
+  </div>
+</div>
+```
+
+);
+}
+
+/* ============================================
+VIGNETTE 5 — COLLABORATION
+============================================ */
+function Vignette5App({ controlsRef, playing = false }) {
+const [phase, setPhase] = useState(“waiting”);
+const [paused, setPaused] = useState(false);
+const [cards, setCards] = useState([]);
+const [chatMessages, setChatMessages] = useState([]);
+const [inputText, setInputText] = useState(””);
+const [previewText, setPreviewText] = useState(””);
+const [previewVisible, setPreviewVisible] = useState(false);
+const [previewType, setPreviewType] = useState(null);
+const [submitFlash, setSubmitFlash] = useState(false);
+const [activeCard, setActiveCard] = useState(null);
+const [activeStatus, setActiveStatus] = useState(“thinking”);
+const [activeRows, setActiveRows] = useState(0);
+const [typingUser, setTypingUser] = useState(“R”); // R=Rachel, M=Marcus
+const charRef = useRef(0);
+const tRef = useRef(null);
+
+const cl = useCallback(() => { if (tRef.current) clearTimeout(tRef.current); }, []);
+const sc = useCallback((fn, ms) => { if (paused) return; tRef.current = setTimeout(fn, ms); }, [paused]);
+
+const COLLAB_STEPS = [
+// Rachel types an entry
+{ type: “type”, user: “R”, text: “pull soil pH and moisture data from NMDC for all Mojave samples”, entry: {
+shortname: “mojave-soil-params”, type: “sql”, typeLabel: “sql”, text: “pull soil pH and moisture data from NMDC for all Mojave samples”, transform: “Trino SQL · NMDC.biosample_metadata”,
+output: “table”, columns: [{ n:“sample_id”, t:“str” }, { n:“pH”, t:“float” }, { n:“moisture_pct”, t:“float” }],
+rows: [[“nmdc:s904a1”,“7.8”,“3.2”],[“nmdc:s904a2”,“8.1”,“2.7”],[“nmdc:s917b1”,“7.4”,“4.1”]], outSummary: “47 samples”,
+refs: [],
+}, previews: [
+{ at: 6, text: “→ analyzing entry…” },
+{ at: 20, text: “→ Trino SQL · NMDC.biosample_metadata”, type: “sql” },
+{ at: 40, text: “→ Trino SQL · NMDC.biosample_metadata · location LIKE ‘%Mojave%’”, type: “sql” },
+]},
+// Marcus comments in chat
+{ type: “chat”, who: “Marcus”, initials: “M”, color: “#2B6CB0”, text: “Nice — can you also grab the collection dates? I want to see if there’s seasonal variation.” },
+// AI responds proactively in chat
+{ type: “chat”, who: “helm”, text: “I can add collection_date to mojave-soil-params. But I also notice pH ranges from 7.4–8.1 — that’s a wide spread for a single biome. Want me to check whether cazyme-abundance correlates with pH?” },
+// Marcus types a note
+{ type: “type”, user: “M”, text: ‘“The 2023 samples were collected pre-monsoon, the 2024 set is post-monsoon. Keep this in mind for any temporal comparisons.”’, entry: {
+shortname: “monsoon-note”, type: “note”, typeLabel: “note”, text: ‘“The 2023 samples were collected pre-monsoon, the 2024 set is post-monsoon. Keep this in mind for any temporal comparisons.”’, transform: “Note · context for temporal analysis”,
+output: “none”, refs: [],
+}, previews: [
+{ at: 3, text: ‘→ Note · begins with quote — stored as context’, type: “note” },
+]},
+// Rachel approves the correlation check
+{ type: “chat”, who: “Rachel”, initials: “R”, color: “#7B4EA3”, text: “Yes, plot it. Scatter with a trend line.” },
+// AI creates a card
+{ type: “type”, user: “H”, text: “plot cazyme-abundance against mojave-soil-params pH as a scatter with trend line”, entry: {
+shortname: “cazyme-ph-scatter”, type: “python”, typeLabel: “python”, text: “plot cazyme-abundance against mojave-soil-params pH as a scatter with trend line”, transform: “Python · card:cazyme-abundance + card:mojave-soil-params → scatter + lm()”,
+output: “scatter”, refs: [{ name: “cazyme-abundance”, type: “python” }, { name: “mojave-soil-params”, type: “sql” }],
+}, previews: [
+{ at: 6, text: “→ analyzing entry…” },
+{ at: 20, text: “→ Python · scatter plot + trend line”, type: “python” },
+{ at: 45, text: “→ Python · card:cazyme-abundance + card:mojave-soil-params → scatter + lm()”, type: “python” },
+]},
+// AI comments on its own result
+{ type: “chat”, who: “helm”, text: “The scatter shows GH13 abundance dropping sharply above pH 7.9 (R² = 0.74, p < 0.001). GH5 and GH3 show weaker negative trends. This is consistent with the monsoon-note — pre-monsoon alkaline conditions may suppress starch-degrading CAZymes.” },
+// Rachel follows up with a hypothesis
+{ type: “chat”, who: “Rachel”, initials: “R”, color: “#7B4EA3”, text: “That’s exactly what I was hoping to see. The pH-sensitivity of GH13 in arid soils hasn’t been reported before.” },
+// Marcus
+{ type: “chat”, who: “Marcus”, initials: “M”, color: “#2B6CB0”, text: “We should stage cazyme-ph-scatter for the narrative. This is the key finding.” },
+];
+
+const reset = useCallback(() => {
+cl(); charRef.current = 0; setPhase(“waiting”); setCards([]); setChatMessages([]);
+setInputText(””); setPreviewText(””); setPreviewVisible(false); setPreviewType(null); setPreviewType(null); setSubmitFlash(false);
+setActiveCard(null); setActiveStatus(“thinking”); setActiveRows(0); setTypingUser(“R”); setPaused(false);
+}, [cl]);
+
+useEffect(() => { if (controlsRef) controlsRef.current = { reset, setPaused, phase, paused }; }, [phase, paused, reset, controlsRef]);
+
+const [stepIdx, setStepIdx] = useState(0);
+
+useEffect(() => { if (phase === “waiting” && playing) sc(() => setPhase(“run”), 600); return cl; }, [phase, playing, sc, cl]);
+
+useEffect(() => {
+if (phase !== “run” || stepIdx >= COLLAB_STEPS.length) {
+if (stepIdx >= COLLAB_STEPS.length && phase === “run”) setPhase(“finished”);
+return;
+}
+const step = COLLAB_STEPS[stepIdx];
+
+```
+if (step.type === "chat") {
+  sc(() => {
+    setChatMessages(prev => [...prev, { who: step.who, text: step.text, initials: step.initials, color: step.color }]);
+    setStepIdx(i => i + 1);
+  }, 1200);
+}
+
+if (step.type === "type") {
+  setTypingUser(step.user);
+  // Type the text
+  if (charRef.current < step.text.length) {
+    tRef.current = setTimeout(() => {
+      charRef.current += 1;
+      setInputText(step.text.slice(0, charRef.current));
+      const p = [...step.previews].reverse().find(s => charRef.current >= s.at);
+      if (p) { setPreviewText(p.text); setPreviewType(p.type || null); setPreviewVisible(true); }
+    }, TYPE_SPEED + Math.random() * 18 - 6);
+  } else if (!submitFlash && !activeCard) {
+    // Done typing — submit
+    sc(() => {
+      setSubmitFlash(true);
+      sc(() => {
+        setInputText(""); setPreviewVisible(false); setPreviewType(null); setSubmitFlash(false);
+        setActiveCard(step.entry); setActiveStatus("thinking");
+        sc(() => {
+          setActiveStatus("running");
+          sc(() => {
+            setActiveStatus("complete");
+            if (step.entry.output === "table" || step.entry.output === "chart") {
+              setPhase("filling");
+            } else {
+              // Note card or other — no output to fill
+              sc(() => {
+                setCards(prev => [step.entry, ...prev]);
+                setActiveCard(null); setActiveRows(0); charRef.current = 0;
+                setStepIdx(i => i + 1);
+              }, 600);
+            }
+          }, 500);
+        }, 400);
+      }, 250);
+    }, 500);
+  }
+}
+```
+
+}, [phase, stepIdx, inputText, submitFlash, activeCard, paused, sc]);
+
+// Fill rows for table/chart output
+useEffect(() => {
+if (phase !== “filling”) return;
+const step = COLLAB_STEPS[stepIdx];
+if (!step || !step.entry) return;
+const maxItems = step.entry.output === “table” ? (step.entry.rows?.length || 0) : step.entry.output === “chart” ? 5 : 0;
+if (activeRows < maxItems) {
+sc(() => setActiveRows(v => v + 1), 55);
+} else {
+sc(() => {
+setCards(prev => [step.entry, …prev]);
+setActiveCard(null); setActiveRows(0); charRef.current = 0;
+setStepIdx(i => i + 1);
+setPhase(“run”);
+}, 600);
+}
+}, [phase, activeRows, stepIdx, sc]);
+
+useEffect(() => { if (phase !== “finished”) return; sc(() => { setStepIdx(0); reset(); }, 5000); }, [phase, sc, reset]);
+
+const entryCount = cards.length + (activeCard ? 1 : 0);
+
+return (
+<div style={{ width: 1440, height: 900, backgroundColor: C.bg, display: “flex”, flexDirection: “column”, fontFamily: f.sans, color: C.text, overflow: “hidden” }}>
+<TopBar session=“mojave-soil-carbon” entryCount={entryCount + 6} avatar=“R” />
+<div style={{ flex: 1, display: “flex”, overflow: “hidden” }}>
+<div style={{ flex: 1, display: “flex”, flexDirection: “column”, minWidth: 0, minHeight: 0, overflow: “hidden” }}>
+<div style={{ padding: “16px 24px 0”, flexShrink: 0 }}>
+{/* Typing indicator — fixed height, toggles visibility */}
+<div style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight, marginBottom: 4, display: “flex”, alignItems: “center”, gap: 6, height: 16, opacity: inputText ? 1 : 0, transition: `opacity 150ms ${ease.out}` }}>
+<div style={{
+width: 16, height: 16, borderRadius: 3, display: “flex”, alignItems: “center”, justifyContent: “center”,
+backgroundColor: typingUser === “R” ? “#7B4EA3” : typingUser === “M” ? “#2B6CB0” : C.textMid,
+fontFamily: f.mono, fontSize: 8, fontWeight: 600, color: “#FFFFFF”,
+}}>{typingUser === “H” ? “⌘” : typingUser}</div>
+{typingUser === “R” ? “Rachel” : typingUser === “M” ? “Marcus” : “Helm”} is typing…
+</div>
+<div style={{
+backgroundColor: C.inputBg, borderRadius: 4,
+border: `1.5px solid ${submitFlash ? (C.type[COLLAB_STEPS[stepIdx]?.entry?.type]?.fg || C.preview) : C.inputBorder}`,
+padding: “12px 16px”, position: “relative”,
+transition: `border-color 250ms ${ease.inOut}`, minHeight: 48,
+}}>
+<div style={{ fontFamily: f.mono, fontSize: 13, lineHeight: 1.6, color: typingUser === “R” ? C.text : “#7CBFBF”, minHeight: 24 }}>
+{inputText}
+<span style={{ display: “inline-block”, width: 2, height: 15, backgroundColor: C.text, marginLeft: 1, verticalAlign: “text-bottom”, animation: “blink 1s step-end infinite” }} />
+</div>
+<div style={{ position: “absolute”, right: 14, bottom: 10, fontFamily: f.mono, fontSize: 10, color: C.textLight }}>⌘↵</div>
+</div>
+<PreviewBar text={previewText} visible={previewVisible} type={previewType} />
+</div>
+
+```
+      <div style={{ flex: 1, overflow: "auto", padding: "14px 24px 24px", columnCount: 2, columnGap: 14 }}>
+        {activeCard && (
+          <CardShell entry={activeCard} status={activeStatus} animate>
+            {(activeStatus === "thinking" || activeStatus === "running") ? (
+              <div style={{ padding: "14px 0", textAlign: "center", fontFamily: f.mono, fontSize: 11, color: C.textLight, animation: "shimmer 1.2s ease-in-out infinite" }}>
+                {activeStatus === "thinking" ? "classifying entry…" : "executing…"}
+              </div>
+            ) : <CardOutput entry={activeCard} visibleRows={activeRows} />}
+          </CardShell>
+        )}
+        {cards.map(e => (
+          <CardShell key={e.shortname} entry={e} status="complete">
+            {e.output === "none" ? (
+              <div style={{ fontFamily: f.serif, fontSize: 12.5, color: C.textMid, fontStyle: "italic", lineHeight: 1.5 }}>
+                Context note saved. Available to the AI and collaborators for this session.
+              </div>
+            ) : <CardOutput entry={e} visibleRows={999} />}
+          </CardShell>
+        ))}
+      </div>
+    </div>
+
+    {/* Chat — always open for collaboration */}
+    <div style={{
+      width: 320, borderLeft: `1px solid ${C.borderLight}`,
+      backgroundColor: C.surface, display: "flex", flexDirection: "column", flexShrink: 0,
+    }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.borderLight}`, fontFamily: f.mono, fontSize: 11, fontWeight: 600, color: C.textMid, letterSpacing: "0.03em", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span>Chat</span>
+        <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ width: 18, height: 18, borderRadius: 3, backgroundColor: "#7B4EA3", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: f.mono, fontSize: 8, fontWeight: 600, color: "#FFF" }}>R</div>
+          <div style={{ width: 18, height: 18, borderRadius: 3, backgroundColor: "#2B6CB0", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: f.mono, fontSize: 8, fontWeight: 600, color: "#FFF" }}>M</div>
+          <div style={{ width: 18, height: 18, borderRadius: 3, backgroundColor: C.border, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: f.mono, fontSize: 8, fontWeight: 600, color: C.textMid }}>⌘</div>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflow: "auto", padding: "16px 14px" }}>
+        {chatMessages.map((msg, i) => (
+          <ChatMsg key={i} who={msg.who} text={msg.text} initials={msg.initials} color={msg.color} animate={true} />
+        ))}
+      </div>
+      <div style={{ padding: "12px 14px", borderTop: `1px solid ${C.borderLight}` }}>
+        <div style={{ padding: "9px 12px", borderRadius: 4, border: `1px solid ${C.inputBorder}`, backgroundColor: C.inputBg, fontFamily: f.sans, fontSize: 12, color: C.textLight }}>
+          Ask anything about this session…
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+);
+}
+
+/* ============================================
+VIGNETTE 6 — DATA INGEST
+============================================ */
+const V6_FILE = {
+name: “mojave_exometabolites_2024.csv”,
+size: “4.2 MB”,
+rows: “12,847 rows”,
+};
+
+const V6_ENTRY = {
+shortname: “exometabolites-csv”, type: “ingest”, typeLabel: “ingest”,
+text: “mojave_exometabolites_2024.csv · 4.2 MB”,
+transform: “CSV ingest → data lake · 12,847 rows · 6 columns detected”,
+output: “table”, refs: [],
+columns: [{ n:“sample_id”, t:“str” }, { n:“metabolite”, t:“str” }, { n:“concentration_uM”, t:“float” }, { n:“retention_time”, t:“float” }],
+rows: [[“nmdc:s904a1”,“trehalose”,“42.7”,“3.21”],[“nmdc:s904a1”,“glucose”,“18.3”,“2.87”],[“nmdc:s904a2”,“trehalose”,“38.1”,“3.19”],[“nmdc:s904a2”,“succinate”,“7.4”,“4.52”]],
+outSummary: “12,847 rows · 6 columns”,
+};
+
+function Vignette6App({ controlsRef, playing = false }) {
+const [phase, setPhase] = useState(“waiting”);
+const [paused, setPaused] = useState(false);
+const [showDropzone, setShowDropzone] = useState(false);
+const [showFile, setShowFile] = useState(false);
+const [showCard, setShowCard] = useState(false);
+const [cardStatus, setCardStatus] = useState(“thinking”);
+const [visibleRows, setVisibleRows] = useState(0);
+// Post-ingest: type a query referencing the ingested data
+const [inputText, setInputText] = useState(””);
+const [previewText, setPreviewText] = useState(””);
+const [previewVisible, setPreviewVisible] = useState(false);
+const [previewType, setPreviewType] = useState(null);
+const [submitFlash, setSubmitFlash] = useState(false);
+const [showSecondCard, setShowSecondCard] = useState(false);
+const [secondStatus, setSecondStatus] = useState(“thinking”);
+const [secondRows, setSecondRows] = useState(0);
+const charRef = useRef(0);
+const tRef = useRef(null);
+
+const SECOND_ENTRY = {
+shortname: “trehalose-by-sample”, type: “python”, typeLabel: “python”,
+text: “from exometabolites-csv, show average trehalose concentration by sample”,
+transform: “Python · card:exometabolites-csv (12,847 rows) → filter + groupby”,
+output: “table”, refs: [{ name: “exometabolites-csv”, type: “ingest”, info: “12,847 rows” }],
+columns: [{ n:“sample_id”, t:“str” }, { n:“avg_trehalose_uM”, t:“float” }, { n:“n_measurements”, t:“int” }],
+rows: [[“nmdc:s904a1”,“42.7”,“8”],[“nmdc:s904a2”,“38.1”,“8”],[“nmdc:s917b1”,“51.3”,“6”]],
+outSummary: “47 samples”,
+};
+const SECOND_PREVIEWS = [
+{ at: 5, text: “→ analyzing entry…” },
+{ at: 15, text: “→ Python · card:exometabolites-csv → filter trehalose”, type: “python” },
+{ at: 35, text: “→ Python · card:exometabolites-csv (12,847 rows) → filter + groupby”, type: “python” },
+];
+
+const cl = useCallback(() => { if (tRef.current) clearTimeout(tRef.current); }, []);
+const sc = useCallback((fn, ms) => { if (paused) return; tRef.current = setTimeout(fn, ms); }, [paused]);
+
+const reset = useCallback(() => {
+cl(); charRef.current = 0; setPhase(“waiting”); setShowDropzone(false); setShowFile(false);
+setShowCard(false); setCardStatus(“thinking”); setVisibleRows(0);
+setInputText(””); setPreviewText(””); setPreviewVisible(false); setPreviewType(null); setPreviewType(null); setSubmitFlash(false);
+setShowSecondCard(false); setSecondStatus(“thinking”); setSecondRows(0); setPaused(false);
+}, [cl]);
+
+useEffect(() => { if (controlsRef) controlsRef.current = { reset, setPaused, phase, paused }; }, [phase, paused, reset, controlsRef]);
+
+useEffect(() => { if (phase === “waiting” && playing) sc(() => setPhase(“dropzone”), 600); return cl; }, [phase, playing, sc, cl]);
+useEffect(() => { if (phase === “dropzone”) { setShowDropzone(true); sc(() => setPhase(“filedrop”), 800); } }, [phase, sc]);
+useEffect(() => { if (phase === “filedrop”) { setShowFile(true); sc(() => setPhase(“ingest”), 1000); } }, [phase, sc]);
+useEffect(() => { if (phase === “ingest”) { setShowDropzone(false); setShowFile(false); setShowCard(true); setCardStatus(“thinking”); sc(() => setPhase(“ingesting”), 500); } }, [phase, sc]);
+useEffect(() => { if (phase === “ingesting”) { setCardStatus(“running”); sc(() => setPhase(“ingested”), 800); } }, [phase, sc]);
+useEffect(() => { if (phase === “ingested”) { setCardStatus(“complete”); sc(() => setPhase(“fill-rows”), 100); } }, [phase, sc]);
+
+useEffect(() => {
+if (phase !== “fill-rows”) return;
+if (visibleRows < V6_ENTRY.rows.length) { sc(() => setVisibleRows(v => v + 1), 55); }
+else { sc(() => setPhase(“pause-then-type”), 800); }
+}, [phase, visibleRows, sc]);
+
+// Now type a query referencing the ingested data
+useEffect(() => { if (phase === “pause-then-type”) sc(() => setPhase(“typing”), 600); }, [phase, sc]);
+
+useEffect(() => {
+if (phase !== “typing” || paused) return;
+if (charRef.current < SECOND_ENTRY.text.length) {
+tRef.current = setTimeout(() => {
+charRef.current += 1;
+setInputText(SECOND_ENTRY.text.slice(0, charRef.current));
+const p = […SECOND_PREVIEWS].reverse().find(s => charRef.current >= s.at);
+if (p) { setPreviewText(p.text); setPreviewType(p.type || null); setPreviewVisible(true); }
+}, TYPE_SPEED + Math.random() * 18 - 6);
+} else { sc(() => setPhase(“submit2”), 500); }
+}, [phase, inputText, paused, sc]);
+
+useEffect(() => { if (phase !== “submit2”) return; setSubmitFlash(true); sc(() => { setInputText(””); setPreviewVisible(false); setPreviewType(null); setSubmitFlash(false); setPhase(“card2-enter”); }, 250); }, [phase, sc]);
+useEffect(() => { if (phase !== “card2-enter”) return; sc(() => { setShowSecondCard(true); setSecondStatus(“thinking”); setPhase(“card2-think”); }, 60); }, [phase, sc]);
+useEffect(() => { if (phase !== “card2-think”) return; sc(() => { setSecondStatus(“running”); setPhase(“card2-run”); }, 500); }, [phase, sc]);
+useEffect(() => { if (phase !== “card2-run”) return; sc(() => { setSecondStatus(“complete”); setPhase(“card2-fill”); }, 600); }, [phase, sc]);
+
+useEffect(() => {
+if (phase !== “card2-fill”) return;
+if (secondRows < SECOND_ENTRY.rows.length) { sc(() => setSecondRows(v => v + 1), 55); }
+else { sc(() => setPhase(“finished”), 200); }
+}, [phase, secondRows, sc]);
+
+useEffect(() => { if (phase !== “finished”) return; sc(() => reset(), 5000); }, [phase, sc, reset]);
+
+const entryCount = (showCard ? 1 : 0) + (showSecondCard ? 1 : 0);
+
+return (
+<div style={{ width: 1440, height: 900, backgroundColor: C.bg, display: “flex”, flexDirection: “column”, fontFamily: f.sans, color: C.text, overflow: “hidden” }}>
+<TopBar session=“mojave-soil-carbon” entryCount={entryCount + 6} avatar=“R” />
+<div style={{ flex: 1, display: “flex”, overflow: “hidden” }}>
+<div style={{ flex: 1, display: “flex”, flexDirection: “column”, minWidth: 0, minHeight: 0, overflow: “hidden” }}>
+<div style={{ padding: “16px 24px 0”, flexShrink: 0 }}>
+<div style={{
+backgroundColor: C.inputBg, borderRadius: 4,
+border: `1.5px solid ${submitFlash ? C.type.python.fg : C.inputBorder}`,
+padding: “12px 16px”, position: “relative”,
+transition: `border-color 250ms ${ease.inOut}`, minHeight: 48,
+}}>
+<div style={{ fontFamily: f.mono, fontSize: 13, lineHeight: 1.6, color: C.text, minHeight: 24 }}>
+{inputText ? renderTextWithRefs(SECOND_ENTRY.text.slice(0, charRef.current), SECOND_ENTRY.refs) : null}
+<span style={{ display: “inline-block”, width: 2, height: 15, backgroundColor: C.text, marginLeft: 1, verticalAlign: “text-bottom”, animation: “blink 1s step-end infinite” }} />
+</div>
+<div style={{ position: “absolute”, right: 14, bottom: 10, fontFamily: f.mono, fontSize: 10, color: C.textLight }}>⌘↵</div>
+</div>
+<PreviewBar text={previewText} visible={previewVisible} type={previewType} />
+</div>
+
+```
+      {/* Card area + drop zone overlay */}
+      <div style={{ flex: 1, overflow: "auto", padding: "14px 24px 24px", position: "relative" }}>
+        {/* Drop zone overlay */}
+        {showDropzone && (
+          <div style={{
+            position: "absolute", inset: 14, borderRadius: 8,
+            border: `2px dashed ${C.preview}`, backgroundColor: `${C.previewBg}88`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 5,
+            animation: `fadeIn 250ms ${ease.out} both`,
+          }}>
+            {!showFile ? (
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontFamily: f.mono, fontSize: 13, color: C.preview, marginBottom: 4 }}>Drop files to ingest</div>
+                <div style={{ fontFamily: f.sans, fontSize: 11, color: C.textLight }}>CSV, FASTA, Excel, PDF, or any file</div>
+              </div>
+            ) : (
+              <div style={{
+                padding: "16px 24px", borderRadius: 6,
+                backgroundColor: C.surface, border: `1px solid ${C.border}`,
+                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                animation: `fileDrop 400ms ${ease.outQuart} both`,
+                textAlign: "center",
+              }}>
+                <div style={{ fontFamily: f.mono, fontSize: 13, fontWeight: 500, color: C.text }}>{V6_FILE.name}</div>
+                <div style={{ fontFamily: f.mono, fontSize: 10, color: C.textLight, marginTop: 2 }}>{V6_FILE.size}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Cards */}
+        <div style={{ columnCount: 2, columnGap: 14 }}>
+          {showSecondCard && (
+            <CardShell entry={SECOND_ENTRY} status={secondStatus} animate>
+              {(secondStatus === "thinking" || secondStatus === "running") ? (
+                <div style={{ padding: "14px 0", textAlign: "center", fontFamily: f.mono, fontSize: 11, color: C.textLight, animation: "shimmer 1.2s ease-in-out infinite" }}>
+                  {secondStatus === "thinking" ? "classifying entry…" : "executing…"}
+                </div>
+              ) : <CardOutput entry={SECOND_ENTRY} visibleRows={secondRows} />}
+            </CardShell>
+          )}
+          {showCard && (
+            <CardShell entry={V6_ENTRY} status={cardStatus} animate>
+              {(cardStatus === "thinking" || cardStatus === "running") ? (
+                <div style={{ padding: "14px 0", textAlign: "center", fontFamily: f.mono, fontSize: 11, color: C.textLight, animation: "shimmer 1.2s ease-in-out infinite" }}>
+                  {cardStatus === "thinking" ? "detecting file type…" : "ingesting into data lake…"}
+                </div>
+              ) : <CardOutput entry={V6_ENTRY} visibleRows={visibleRows} />}
+            </CardShell>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Chat collapsed */}
+    <div style={{ width: 44, borderLeft: `1px solid ${C.borderLight}`, backgroundColor: C.surface, display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, paddingTop: 14 }}>
+      <div style={{ writingMode: "vertical-rl", textOrientation: "mixed", fontFamily: f.mono, fontSize: 10, fontWeight: 600, color: C.textLight, letterSpacing: "0.05em" }}>Chat</div>
+    </div>
+  </div>
+</div>
+```
+
+);
+}
+
+/* ============================================
+SCALED FRAME WRAPPER
+============================================ */
+function ScaledFrame({ children, width = 1440, height = 900 }) {
+return (
+<div style={{ width: “95vw”, maxWidth: 1100, aspectRatio: `${width} / ${height}`, borderRadius: 3, overflow: “hidden”, boxShadow: “0 2px 16px rgba(0,0,0,0.1)”, position: “relative” }}>
+<div style={{ position: “absolute”, top: 0, left: 0, width, height, transform: “scale(var(–s))”, transformOrigin: “top left” }}
+ref={(el) => {
+if (el) {
+const parent = el.parentElement;
+const update = () => {
+const s = Math.min(parent.clientWidth / width, parent.clientHeight / height);
+el.style.setProperty(”–s”, s);
+parent.style.height = (height * s) + “px”;
+};
+update();
+window.addEventListener(“resize”, update);
+}
+}}>
+{children}
+</div>
+</div>
+);
+}
+
+function VignetteControls({ controlsRef }) {
+const [, tick] = useState(0);
+useEffect(() => { const i = setInterval(() => tick(n => n + 1), 300); return () => clearInterval(i); }, []);
+const cr = controlsRef.current || {};
+const notStarted = !cr.phase || cr.phase === “waiting”;
+const label = notStarted ? “scroll to play ↓” : cr.phase === “finished” ? “↻ replay” : cr.paused ? “▶ play” : “❚❚ pause”;
+return (
+<div style={{ display: “flex”, alignItems: “center”, gap: 12, marginBottom: 10 }}>
+<button onClick={() => {
+if (notStarted) return;
+if (cr.phase === “finished” && cr.reset) cr.reset();
+else if (cr.setPaused) cr.setPaused(p => !p);
+}} style={{
+padding: “4px 10px”, borderRadius: 3,
+backgroundColor: “#F9FAF7”, border: “1px solid #D5DAD0”,
+fontFamily: f.mono, fontSize: 9, color: notStarted ? “#9BA396” : “#434840”,
+cursor: notStarted ? “default” : “pointer”,
+}}>
+{label}
+</button>
+</div>
+);
+}
+
+function VignetteSection({ label, description, controlsRef, children: renderChild }) {
+const frameRef = useRef(null);
+const [isVisible, setIsVisible] = useState(false);
+const [hasPlayed, setHasPlayed] = useState(false);
+
+useEffect(() => {
+const el = frameRef.current;
+if (!el) return;
+const observer = new IntersectionObserver(
+([entry]) => {
+setIsVisible(entry.isIntersecting);
+if (entry.isIntersecting) setHasPlayed(true);
+},
+{ threshold: 0.95 }
+);
+observer.observe(el);
+return () => observer.disconnect();
+}, []);
+
+// Pause/resume via ref when scrolling in/out (only after first play)
+useEffect(() => {
+if (!hasPlayed) return;
+const cr = controlsRef.current;
+if (cr && cr.setPaused) cr.setPaused(!isVisible);
+}, [isVisible, hasPlayed, controlsRef]);
+
+const maxW = { maxWidth: 900, width: “90vw” };
+const prose = { fontFamily: f.serif, fontSize: 14, lineHeight: 1.65, color: “#434840” };
+const lbl = { fontFamily: f.mono, fontSize: 10, color: “#6B7268”, letterSpacing: “0.03em”, marginBottom: 4 };
+
+return (
+<div style={{ display: “flex”, flexDirection: “column”, alignItems: “center” }}>
+<div style={{ …maxW, marginBottom: 14 }}>
+<div style={lbl}>{label}</div>
+<div style={prose}>{description}</div>
+</div>
+<VignetteControls controlsRef={controlsRef} />
+<div ref={frameRef}>
+{typeof renderChild === “function” ? renderChild(isVisible) : renderChild}
+</div>
+</div>
+);
+}
+
+/* ============================================
+MAIN PAGE
+============================================ */
+function VignettesPage() {
+const v1Ref = useRef({});
+const v3Ref = useRef({});
+const v4Ref = useRef({});
+const v5Ref = useRef({});
+const v6Ref = useRef({});
+
+return (
+<div style={{
+width: “100vw”, minHeight: “100vh”,
+display: “flex”, flexDirection: “column”, alignItems: “center”,
+backgroundColor: “#DDE2D8”, overflow: “auto”,
+padding: “48px 0 64px”, gap: 48,
+}}>
+{/* Header */}
+<div style={{ maxWidth: 900, width: “90vw”, textAlign: “center” }}>
+<div style={{ fontFamily: f.mono, fontSize: 22, fontWeight: 700, color: “#1A1E18”, letterSpacing: “0.05em”, marginBottom: 6 }}>
+THE HELM
+</div>
+<div style={{ fontFamily: f.serif, fontSize: 15, color: “#434840”, fontStyle: “italic”, marginBottom: 16 }}>
+Type what you’re thinking.{/* tagline variant: “Ink what you’re thinking.” */}
+</div>
+<div style={{ fontFamily: f.serif, fontSize: 14, lineHeight: 1.65, color: “#434840”, maxWidth: 640, margin: “0 auto” }}>
+The Helm is a scientific exploration interface — a single input surface where researchers express intent in any form and the system handles classification, transformation, and execution against real data sources. Everything shown here is roughly achievable today, given the current state of AI and our existing KBERDL infrastructure. These animated vignettes demonstrate the core interaction patterns.
+</div>
+<div style={{ fontFamily: f.sans, fontSize: 11, color: “#6B7268”, marginTop: 12, lineHeight: 1.6, maxWidth: 600, margin: “12px auto 0” }}>
+Example scenario uses DOE BER systems biology data sources (NMDC, IMG, KBase).
+Inspired by <span style={{ fontWeight: 500 }}>KBERDL</span> (KBase BER Data Lakehouse) and
+the <span style={{ fontWeight: 500 }}>BERIL</span> (BER Integrative Layer) project
+at Lawrence Berkeley National Laboratory.
+</div>
+</div>
+
+```
+  <VignetteSection label="vignette 1 · the core loop" controlsRef={v1Ref}
+    description="The scientist types an entry — SQL, Python, a hypothesis, plain English — and the system classifies it, shows a live transformation preview, and produces a named result card. Each card's shortname becomes a referenceable variable: mention it in a future entry and the system resolves it automatically, shown as an inline pill.">
+    {(playing) => <ScaledFrame><Vignette1App controlsRef={v1Ref} playing={playing} /></ScaledFrame>}
+  </VignetteSection>
+
+  <VignetteSection label="vignette 2 · error → chat → fix" controlsRef={v3Ref}
+    description="A query returns empty results. The card diagnoses the problem inline and suggests actions. The scientist opens the session chat to provide context the system didn't have — and the AI finds the issue and retries with corrected parameters. The card updates in place.">
+    {(playing) => <ScaledFrame><Vignette3App controlsRef={v3Ref} playing={playing} /></ScaledFrame>}
+  </VignetteSection>
+
+  <VignetteSection label="vignette 3 · data ingest" controlsRef={v6Ref}
+    description="A file is dragged onto the workspace and ingested into the data lake. The system detects the file type, infers the schema, and creates a card with a preview. The ingested data is immediately referenceable — the scientist types a query against it in the next entry.">
+    {(playing) => <ScaledFrame><Vignette6App controlsRef={v6Ref} playing={playing} /></ScaledFrame>}
+  </VignetteSection>
+
+  <VignetteSection label="vignette 4 · collaboration" controlsRef={v5Ref}
+    description='Two researchers work in the same session. Both can type entries and chat. A note card — triggered by starting with a quote — captures context for collaborators and the AI without executing anything. The chat shows multiple participants alongside the AI, all symmetric.'>
+    {(playing) => <ScaledFrame><Vignette5App controlsRef={v5Ref} playing={playing} /></ScaledFrame>}
+  </VignetteSection>
+
+  <VignetteSection label="vignette 5 · compose the narrative" controlsRef={v4Ref}
+    description="After exploring, the scientist composes a narrative — selecting and ordering cards into a publishable account. The workspace compresses to a card list, and a narrative panel assembles the selected entries with connective text between them. The result is a shareable, reproducible, publishable artifact.">
+    {(playing) => <ScaledFrame><Vignette4App controlsRef={v4Ref} playing={playing} /></ScaledFrame>}
+  </VignetteSection>
+
+</div>
+```
+
+);
+}
+</script>
+
+  <script>
+    var source = document.getElementById('helm-source').textContent;
+    var compiled = Babel.transform(source, { presets: ['react'] }).code;
+    eval(compiled);
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(VignettesPage));
+  </script>
+
 </body>
 </html>
