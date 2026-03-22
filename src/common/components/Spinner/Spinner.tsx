@@ -1,5 +1,5 @@
 import { vars } from '@/theme';
-import { spin } from '@/common/animations/keyframes.css';
+import { spinnerBase, spinnerSizes } from './Spinner.css';
 
 export interface SpinnerProps {
   /** Spinner size in pixels. Default: 20 */
@@ -15,18 +15,18 @@ export function Spinner({
   color = vars.color.textMid,
   className,
 }: SpinnerProps) {
-  const mergedClassName = className ? `${spin} ${className}` : spin;
+  const classes = [spinnerBase, spinnerSizes[size], className]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
       viewBox="0 0 24 24"
       fill="none"
       role="status"
       aria-label="Loading"
-      className={mergedClassName}
+      className={classes}
     >
       <circle
         cx={12}
