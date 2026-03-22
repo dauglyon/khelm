@@ -17,8 +17,8 @@ The theme contract defines the shape of all design tokens without assigning valu
 - Use `createThemeContract()` from `@vanilla-extract/css`
 - Define nested token structure matching the contract table in the spec:
   - `color.bg`, `color.surface`, `color.border`, `color.text`, `color.textMid`, `color.textLight`
-  - `color.status.thinking`, `color.status.running`, `color.status.complete`, `color.status.error`
-  - `color.inputType.[type].fg`, `color.inputType.[type].bg`, `color.inputType.[type].border` for each of: `sql`, `python`, `literature`, `hypothesis`, `note`, `dataIngest`
+  - `color.status.thinking`, `color.status.queued`, `color.status.running`, `color.status.complete`, `color.status.error`
+  - `color.inputType.[type].fg`, `color.inputType.[type].bg`, `color.inputType.[type].border` for each of: `sql`, `python`, `literature`, `hypothesis`, `note`, `dataIngest`, `task`
   - `font.mono`, `font.sans`, `font.serif`
   - `easing.out`, `easing.inOut`, `easing.outQuart`
 - Export the contract as `vars`
@@ -30,9 +30,9 @@ The theme contract defines the shape of all design tokens without assigning valu
 
 ### `contract.test.ts`
 - Verify `vars` object has all expected top-level keys (`color`, `font`, `easing`)
-- Verify `vars.color.inputType` has all six type keys
+- Verify `vars.color.inputType` has all seven type keys
 - Verify each inputType has `fg`, `bg`, `border` sub-keys
-- Verify `vars.color.status` has all four status keys
+- Verify `vars.color.status` has all five status keys
 - Verify `themeClass` is a non-empty string
 
 ## Demo Reference
@@ -53,7 +53,7 @@ npx tsc --noEmit src/theme/contract.css.ts src/theme/theme.css.ts
 - [ ] All color hex values match architecture/README.md exactly
 - [ ] Font stacks include the specified fallbacks (e.g., `'JetBrains Mono', Menlo, monospace`)
 - [ ] Easing values match the cubic-bezier strings in the spec
-- [ ] `InputType` enum or union type is defined and exported for the six input types
+- [ ] `InputType` enum or union type is defined and exported for the seven input types
 - [ ] Tests pass: `npx vitest run src/theme/contract.test.ts`
 - [ ] No raw hex, px, or font values appear outside of `theme.css.ts`
 

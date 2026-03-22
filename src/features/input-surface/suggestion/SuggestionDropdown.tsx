@@ -31,6 +31,7 @@ const typeColors: Record<InputType, string> = {
   hypothesis: '#B8660D',
   note: '#7A6340',
   dataIngest: '#2D8E8E',
+  task: '#7A3B5E',
 };
 
 export interface SuggestionDropdownProps {

@@ -19,20 +19,22 @@ describe('theme contract', () => {
     expect(vars.color).toHaveProperty('textLight');
   });
 
-  it('has all four status color keys', () => {
+  it('has all five status color keys', () => {
     expect(vars.color.status).toHaveProperty('thinking');
+    expect(vars.color.status).toHaveProperty('queued');
     expect(vars.color.status).toHaveProperty('running');
     expect(vars.color.status).toHaveProperty('complete');
     expect(vars.color.status).toHaveProperty('error');
   });
 
-  it('has all six inputType keys', () => {
+  it('has all seven inputType keys', () => {
     expect(vars.color.inputType).toHaveProperty('sql');
     expect(vars.color.inputType).toHaveProperty('python');
     expect(vars.color.inputType).toHaveProperty('literature');
     expect(vars.color.inputType).toHaveProperty('hypothesis');
     expect(vars.color.inputType).toHaveProperty('note');
     expect(vars.color.inputType).toHaveProperty('dataIngest');
+    expect(vars.color.inputType).toHaveProperty('task');
   });
 
   it('has fg, bg, border sub-keys for each inputType', () => {
@@ -43,6 +45,7 @@ describe('theme contract', () => {
       'hypothesis',
       'note',
       'dataIngest',
+      'task',
     ] as const;
 
     for (const type of inputTypes) {
@@ -81,8 +84,8 @@ describe('theme class', () => {
 });
 
 describe('InputType type', () => {
-  it('is assignable from all six input type literals (compile-time check)', () => {
-    // This test validates at compile time that InputType accepts all six values.
+  it('is assignable from all seven input type literals (compile-time check)', () => {
+    // This test validates at compile time that InputType accepts all seven values.
     // If any are missing from the union, TypeScript will error.
     const types: InputType[] = [
       'sql',
@@ -91,7 +94,8 @@ describe('InputType type', () => {
       'hypothesis',
       'note',
       'dataIngest',
+      'task',
     ];
-    expect(types).toHaveLength(6);
+    expect(types).toHaveLength(7);
   });
 });

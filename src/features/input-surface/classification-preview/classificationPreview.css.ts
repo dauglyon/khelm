@@ -78,6 +78,11 @@ export const pillColorVariants = styleVariants({
     backgroundColor: vars.color.inputType.dataIngest.bg,
     borderColor: vars.color.inputType.dataIngest.border,
   },
+  task: {
+    color: vars.color.inputType.task.fg,
+    backgroundColor: vars.color.inputType.task.bg,
+    borderColor: vars.color.inputType.task.border,
+  },
 });
 
 export const lowConfidencePill = style({

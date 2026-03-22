@@ -22,6 +22,7 @@ const TYPE_LABELS: Record<InputType, string> = {
   hypothesis: 'Hypothesis',
   note: 'Note',
   dataIngest: 'Data Ingest',
+  task: 'Task',
 };
 
 /** Runtime color map for dropdown dots */
@@ -32,6 +33,7 @@ const TYPE_COLORS: Record<InputType, string> = {
   hypothesis: '#B8660D',
   note: '#7A6340',
   dataIngest: '#2D8E8E',
+  task: '#7A3B5E',
 };
 
 const ALL_TYPES: InputType[] = [
@@ -41,6 +43,7 @@ const ALL_TYPES: InputType[] = [
   'hypothesis',
   'note',
   'dataIngest',
+  'task',
 ];
 
 export interface ClassificationPreviewProps {

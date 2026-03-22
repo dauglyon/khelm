@@ -10,6 +10,7 @@ export const vars = createThemeContract({
     textLight: null,
     status: {
       thinking: null,
+      queued: null,
       running: null,
       complete: null,
       error: null,
@@ -21,6 +22,7 @@ export const vars = createThemeContract({
       hypothesis: { fg: null, bg: null, border: null },
       note: { fg: null, bg: null, border: null },
       dataIngest: { fg: null, bg: null, border: null },
+      task: { fg: null, bg: null, border: null },
     },
   },
   font: {
@@ -41,4 +43,5 @@ export type InputType =
   | 'literature'
   | 'hypothesis'
   | 'note'
-  | 'dataIngest';
+  | 'dataIngest'
+  | 'task';

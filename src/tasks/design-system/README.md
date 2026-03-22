@@ -32,26 +32,26 @@ The design-system domain provides the visual foundation for The Helm: a vanilla-
 
 | ID | Summary | Deps | Status | Preflight |
 |----|---------|------|--------|-----------|
-| 01 | Theme contract and values | none | planned | `npx vitest run --reporter=verbose src/theme/` |
-| 02 | Sprinkles utility API | 01 | planned | `npx vitest run --reporter=verbose src/theme/` |
-| 03 | Typography scale and font-face | 01 | planned | `npx vitest run --reporter=verbose src/theme/` |
-| 04 | Theme barrel export | 01, 02, 03 | planned | `npx vitest run --reporter=verbose src/theme/` |
-| 05 | Easing constants | 01 | planned | `npx vitest run --reporter=verbose src/common/animations/` |
-| 06 | CSS keyframe animations | 01, 05 | planned | `npx vitest run --reporter=verbose src/common/animations/` |
-| 07 | LazyMotion provider | none | planned | `npx vitest run --reporter=verbose src/common/animations/` |
-| 08 | Motion variants | 05, 07 | planned | `npx vitest run --reporter=verbose src/common/animations/` |
-| 09 | Stack component | 02 | planned | `npx vitest run --reporter=verbose src/common/components/Stack/` |
-| 10 | Icon component | 02 | planned | `npx vitest run --reporter=verbose src/common/components/Icon/` |
-| 11 | Spinner component | 02, 06 | planned | `npx vitest run --reporter=verbose src/common/components/Spinner/` |
-| 12 | Skeleton component | 02, 06 | planned | `npx vitest run --reporter=verbose src/common/components/Skeleton/` |
-| 13 | Button component | 02, 03, 10, 11 | planned | `npx vitest run --reporter=verbose src/common/components/Button/` |
-| 14 | IconButton component | 13 | planned | `npx vitest run --reporter=verbose src/common/components/IconButton/` |
-| 15 | TextInput component | 02, 03 | planned | `npx vitest run --reporter=verbose src/common/components/TextInput/` |
-| 16 | Select component | 15, 10 | planned | `npx vitest run --reporter=verbose src/common/components/Select/` |
-| 17 | Checkbox component | 02, 03 | planned | `npx vitest run --reporter=verbose src/common/components/Checkbox/` |
-| 18 | Chip component | 02, 03, 10 | planned | `npx vitest run --reporter=verbose src/common/components/Chip/` |
-| 19 | Badge component | 02, 06 | planned | `npx vitest run --reporter=verbose src/common/components/Badge/` |
-| 20 | Card component | 02, 08 | planned | `npx vitest run --reporter=verbose src/common/components/Card/` |
+| 01 | Theme contract and values | none | done | done |
+| 02 | Sprinkles utility API | 01 | pending | done |
+| 03 | Typography scale and font-face | 01 | pending | done |
+| 04 | Theme barrel export | 01, 02, 03 | pending | done |
+| 05 | Easing constants | 01 | pending | done |
+| 06 | CSS keyframe animations | 01, 05 | pending | done |
+| 07 | LazyMotion provider | none | pending | done |
+| 08 | Motion variants | 05, 07 | pending | done |
+| 09 | Stack component | 02 | pending | done |
+| 10 | Icon component | 02 | pending | done |
+| 11 | Spinner component | 02, 06 | pending | done |
+| 12 | Skeleton component | 02, 06 | pending | done |
+| 13 | Button component | 02, 03, 10, 11 | pending | done |
+| 14 | IconButton component | 13 | pending | done |
+| 15 | TextInput component | 02, 03 | pending | done |
+| 16 | Select component | 15, 10 | pending | done |
+| 17 | Checkbox component | 02, 03 | pending | done |
+| 18 | Chip component | 02, 03, 10 | pending | done |
+| 19 | Badge component | 02, 06 | pending | done |
+| 20 | Card component | 02, 08 | pending | done |
 
 ## Critical Path DAG
 

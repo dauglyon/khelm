@@ -11,6 +11,7 @@ export const themeClass = createTheme(vars, {
     textLight: '#6B7268',
     status: {
       thinking: '#B8660D',
+      queued: '#6B7280',
       running: '#2B6CB0',
       complete: '#1A7F5A',
       error: '#C53030',
@@ -22,6 +23,7 @@ export const themeClass = createTheme(vars, {
       hypothesis: { fg: '#B8660D', bg: '#FBF0E0', border: '#E4C890' },
       note: { fg: '#7A6340', bg: '#F5F0E7', border: '#D6C8AD' },
       dataIngest: { fg: '#2D8E8E', bg: '#E0F2F2', border: '#A8D6D6' },
+      task: { fg: '#7A3B5E', bg: '#F2E6EE', border: '#C9A3B8' },
     },
   },
   font: {
