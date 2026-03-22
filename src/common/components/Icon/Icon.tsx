@@ -1,14 +1,19 @@
-import type { SVGAttributes } from 'react';
-import { iconPaths } from './icons';
-import { iconBase } from './Icon.css';
+import { iconRegistry } from './icons';
+import { iconBase, iconSizes } from './Icon.css';
 
-export interface IconProps extends SVGAttributes<SVGElement> {
+export interface IconProps {
   /** Icon name from the registry */
   name: string;
   /** Icon size in pixels. Default: 20 */
   size?: 16 | 20 | 24;
   /** Icon color. Default: 'currentColor' */
   color?: string;
+  /** Additional CSS class name */
+  className?: string;
+  /** aria-label for accessible icons */
+  'aria-label'?: string;
+  /** data-testid for testing */
+  'data-testid'?: string;
 }
 
 export function Icon({
@@ -18,27 +23,27 @@ export function Icon({
   className,
   ...rest
 }: IconProps) {
-  const paths = iconPaths[name];
-  if (!paths) {
+  const IconComponent = iconRegistry[name];
+  if (!IconComponent) {
+    console.warn(`Icon: unknown icon name "${name}"`);
     return null;
   }
 
-  const mergedClassName = className
-    ? `${iconBase} ${className}`
-    : iconBase;
+  const sizeClass = iconSizes[size];
+  const mergedClassName = [iconBase, sizeClass, className].filter(Boolean).join(' ');
+
+  const hasAriaLabel = rest['aria-label'] != null;
 
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      color={color}
-      aria-hidden="true"
+    <span
       className={mergedClassName}
-      {...rest}
+      style={{ color }}
+      aria-hidden={hasAriaLabel ? undefined : true}
+      role={hasAriaLabel ? 'img' : undefined}
+      aria-label={rest['aria-label']}
+      data-testid={rest['data-testid']}
     >
-      {paths}
-    </svg>
+      <IconComponent aria-hidden="true" />
+    </span>
   );
 }

@@ -11,7 +11,7 @@ export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
 export { Icon } from './Icon';
 export type { IconProps } from './Icon';
-export type { IconName } from './Icon';
+export { iconRegistry } from './Icon';
 export { IconButton } from './IconButton';
 export type { IconButtonProps } from './IconButton';
 export { Select } from './Select';
