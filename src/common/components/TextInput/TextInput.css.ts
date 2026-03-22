@@ -72,6 +72,12 @@ export const suffixStyle = style({
   paddingRight: '10px',
 });
 
+export const wrapperDisabled = style({
+  opacity: 0.5,
+  pointerEvents: 'none',
+  cursor: 'not-allowed',
+});
+
 export const errorMessage = style({
   color: vars.color.status.error,
   fontSize: '11px',
