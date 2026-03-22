@@ -1,6 +1,6 @@
 # Card Domain Spec
 
-This spec defines the card data model, type-specific rendering, status lifecycle, streaming content, and inline chat panel. A card is the atomic unit of work in The Helm -- every user input produces a card, and every card accumulates into the session workspace.
+This spec defines the card data model, type-specific rendering, status lifecycle, streaming content, and inline chat panel. A card is the atomic unit of work in The Helm -- most user inputs produce a card, and every card accumulates into the session workspace. The `chat` type is handled entirely by the input surface and does not create a card (see `input-surface.md`).
 
 ## Data Model
 
@@ -29,7 +29,6 @@ This spec defines the card data model, type-specific rendering, status lifecycle
 | `sql` | Database query |
 | `python` | Python code execution |
 | `literature` | Literature/publication search |
-| `hypothesis` | Structured scientific claim |
 | `note` | Free-form text |
 | `data_ingest` | File upload with schema detection |
 | `task` | Containerized tool execution via KBase CDM Task Service (CTS) |
@@ -55,7 +54,6 @@ Each card type has a distinct content shape, result shape, and body renderer.
 | SQL | `{ query: string; dataSource: string }` | `{ columns: Column[]; rows: Row[]; rowCount: number; truncated: boolean }` |
 | Python | `{ code: string; language: "python" }` | `{ stdout: string; stderr: string; returnValue: any; figures: Figure[] }` |
 | Literature | `{ searchTerms: string[]; filters?: LitFilters }` | `{ hits: Publication[]; totalCount: number }` |
-| Hypothesis | `{ claim: string; evidence?: string; domain?: string }` | `{ analysis: string; suggestedQueries: SuggestedQuery[]; confidence?: number }` |
 | Note | `{ text: string }` | `null` (notes have no execution result) |
 | Data Ingest | `{ fileName: string; fileSize: number; mimeType: string }` | `{ schema: SchemaField[]; sampleRows: Row[]; totalRows: number; uploadId: string }` |
 | Task | `{ toolName: string; toolVersion: string; computeTarget: string; containerImage: string; inputs: TaskInput[] }` | `{ outputFiles: OutputFile[]; logs?: string; elapsed: number }` |
@@ -67,7 +65,6 @@ Each card type has a distinct content shape, result shape, and body renderer.
 | SQL | Code block (JetBrains Mono) showing `content.query`, followed by a scrollable result table with column headers and rows. Show `rowCount` and a "truncated" badge when applicable. |
 | Python | Code block showing `content.code`, followed by stdout/stderr output panels. Render `figures` as inline images below output. |
 | Literature | List of publication cards: title, authors (truncated), year, source. Each item is clickable to expand abstract. Show `totalCount` vs displayed count. |
-| Hypothesis | Structured display: claim in a callout block (Serif font), followed by AI analysis text (streamed). Below analysis, render `suggestedQueries` as clickable chips that create new cards. |
 | Note | Editable plain text area. No execution, no result section. |
 | Data Ingest | Two-section layout: schema preview (field name, inferred type, sample values) as a compact table, followed by a data sample table showing first N rows. Show upload progress bar while `status === "running"`. |
 | Task | Transform bar showing tool name + version + compute target (container image behind "view source"). Running state: status label (queued/running) + elapsed timer + expandable log link. No progress bar (containers are opaque). Output: directory tree of produced files (name, size, type) with ingest buttons to promote outputs into workspace. |
@@ -85,16 +82,18 @@ Every card renders a consistent header regardless of type.
 
 ## Compound Cards
 
-Task cards are usually **compound cards** — they decompose into sub-cards when input data needs format conversion.
+Any input whose intent spans multiple actions produces a **compound card** — an ordered pipeline of sub-cards. The classifier outputs the full pipeline in execution order (see `input-surface.md` for the classification output schema).
+
+**Example: task decomposition.** A task card may decompose into sub-cards when input data needs format conversion.
 
 | Sub-card | Type | Purpose |
 |----------|------|---------|
 | `.prep` | `python` | Stages/formats input data for the container |
 | `.run` | `task` | Actual container execution on remote compute |
 
-The system decides whether to decompose based on schema match: if input already matches the container's expected format, a simple task card is created. Otherwise, a compound card with `.prep` + `.run` sub-cards.
+**Example: hypothesis-like input.** "Acidobacteria correlates with soil pH" classifies as `["sql", "python"]` (test it) with `["note"]` as an alternative (record it). Each pipeline step becomes a sub-card.
 
-Sub-cards share the parent card's `shortname` with a suffix (e.g., `blast_run.prep`, `blast_run.run`). They appear as an indented group in the workspace.
+The system decides whether to decompose based on the classifier pipeline output. Sub-cards share the parent card's `shortname` with a suffix (e.g., `blast_run.prep`, `blast_run.run`). They appear as an indented group in the workspace.
 
 ### Cost Awareness
 
@@ -142,7 +141,7 @@ All transitions use Motion `AnimatePresence` to cross-fade outgoing and incoming
 
 ## Streaming Content Rendering
 
-When a card is in `running` status and the backend streams results (SQL result rows, Python output, Hypothesis analysis), content renders incrementally.
+When a card is in `running` status and the backend streams results (SQL result rows, Python output, literature results), content renders incrementally.
 
 ### Architecture
 
@@ -226,7 +225,7 @@ Cards can reference other cards. References are stored as an array of card IDs o
 |----------|--------|
 | Display | Referenced cards shown as clickable pills in the card body (shortname + type badge color). |
 | Navigation | Clicking a reference pill scrolls the workspace to the referenced card and briefly highlights it (Motion scale pulse, 300ms). |
-| Creation | References are created when the AI generates a card that builds on another (e.g., a Hypothesis card citing a SQL card's results). User can also manually add references via the card chat panel. |
+| Creation | References are created when the AI generates a card that builds on another (e.g., a Python card citing a SQL card's results). User can also manually add references via the card chat panel. |
 | Deletion | Deleting a referenced card does not delete the reference -- the pill shows "deleted card" in muted text. |
 
 ## Accessibility

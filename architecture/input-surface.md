@@ -85,18 +85,29 @@ Mentions let users reference existing cards inline. They render as colored pill/
 
 ## 3. Input Classification
 
-Determines the user's intent so the system can route the input to the correct execution path.
+Determines the user's intent so the system can route the input to the correct execution path. Classification is one of three independent model roles (see Three-Model Architecture below).
 
 ### Input Types
 
-| Type | Intent | Example |
-|------|--------|---------|
-| SQL | Execute a query against data sources | `SELECT * FROM biosample WHERE ecosystem_type = 'Soil'` |
-| Python | Run code in a sandbox | `import pandas as pd; df.groupby('phylum').count()` |
-| Literature | Search scientific literature | "Recent papers on CRISPR-Cas9 in methanotrophs" |
-| Hypothesis | Structure a testable claim | "Acidobacteria abundance correlates with soil pH below 5.5" |
-| Note | Store a free-text annotation | "Remember to check the QC flags on JGI run 3045" |
-| Data Ingest | Parse a file reference and load data | "Load the CSV from /uploads/soil_samples_2024.csv" |
+| Type | Intent | Creates card? | Example |
+|------|--------|---------------|---------|
+| `sql` | Query data from NMDC/IMG/KBase | Yes | `SELECT * FROM biosample WHERE ecosystem_type = 'Soil'` |
+| `python` | Run analysis, plotting, statistics | Yes | `import pandas as pd; df.groupby('phylum').count()` |
+| `literature` | Search scientific publications | Yes | "Recent papers on CRISPR-Cas9 in methanotrophs" |
+| `note` | Persistent annotation for collaborators | Yes | "Remember to check the QC flags on JGI run 3045" |
+| `data_ingest` | Parse and load a file into workspace | Yes | "Load the CSV from /uploads/soil_samples_2024.csv" |
+| `task` | Run a containerized bioinformatics tool | Yes | "Run BLAST on @query-1 results against nr" |
+| `chat` | Conversational help, clarification, meta-questions | No | "What data sources are available?" |
+
+`hypothesis` is not a type. Hypothesis-like inputs are decomposed into actionable types: "Acidobacteria correlates with soil pH" classifies as `["sql", "python"]` (test it) with `["note"]` as an alternative (record it).
+
+### Note vs Chat Boundary
+
+| | Note | Chat |
+|-|------|------|
+| User intent | Depositing information for persistence | Implicitly expects a response |
+| Test | Would the user be surprised if the system silently recorded this and did nothing? **No** -> note | **Yes** -> chat |
+| Vague/short input | Not note (too ambiguous to persist) | Defaults to chat |
 
 ### Classification Pipeline
 
@@ -104,7 +115,15 @@ Determines the user's intent so the system can route the input to the correct ex
 User types --> debounce (300ms) --> editor.getText() --> classify() --> update preview
 ```
 
-### Local Model (Primary)
+### Three-Model Architecture
+
+| Role | Purpose | Model class |
+|------|---------|-------------|
+| Classification | Commit to pipeline types, show user what's coming | Small local model (Qwen3.5 4B), always hot in VRAM |
+| Transformation | Generate actual SQL/Python/tool configs after user submits | Larger code-specialized model, swapped in on submit |
+| Chat / error resolution | Conversational AI in card chat panels, error diagnosis, tool calls | Reasoning model with thinking mode + tool calling |
+
+### Classification Model (Primary)
 
 | Aspect | Specification |
 |--------|---------------|
@@ -130,25 +149,34 @@ Used when Ollama is unavailable (network deployment, local model not running).
 
 ### Classification Output Schema
 
+The classifier outputs a pipeline of actionable types, not a single type with confidence.
+
+```json
+{"types": ["sql", "python"]}
+{"types": ["sql"], "alternatives": [["note"]]}
+{"types": ["chat"]}
 ```
-{
-  "type": "sql" | "python" | "literature" | "hypothesis" | "note" | "data_ingest" | "task",
-  "confidence": 0.0 - 1.0,
-  "alternatives": [
-    { "type": "...", "confidence": 0.0 - 1.0 },
-    { "type": "...", "confidence": 0.0 - 1.0 }
-  ]
-}
-```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `types` | `string[]` | Ordered pipeline of card types to create. Single-element for most inputs. |
+| `alternatives` | `string[][]` | Optional. Each entry is an alternative pipeline the user can switch to. Rare by design. |
+
+Alternatives appear only when the input is a claim/observation with no explicit action. All other inputs have clear signals and produce no alternatives.
+
+### Capability Manifest
+
+The classification model's system prompt includes a **capability manifest** describing what each card type can do, what data sources exist, and what tools are available. The manifest is dynamic -- it updates as tools are registered and data sources are added.
 
 ### Prompt Requirements
 
 | Element | Detail |
 |---------|--------|
 | System context | Classify by what the user wants to DO, not what the input is ABOUT |
+| Capability manifest | Dynamic description of available types, data sources, and tools |
 | Category definitions | Action-oriented descriptions for each of the seven types |
 | Few-shot examples | 5 per category, including 2 ambiguous/tricky examples per category |
-| Disambiguation rules | Imperative + data verb = SQL; declarative claim = Hypothesis; "papers"/"studies" = Literature; personal/task language = Note; tool/container/pipeline invocation = Task |
+| Disambiguation rules | Imperative + data verb = SQL; "papers"/"studies" = Literature; personal/task language = Note; tool/container/pipeline = Task; vague/meta/help = Chat |
 | Output constraint | JSON schema as defined above; `max_tokens=50` |
 
 ---
@@ -157,32 +185,33 @@ Used when Ollama is unavailable (network deployment, local model not running).
 
 A live type indicator that updates as the user types, showing what the system thinks the input is.
 
-### Confidence-Based UX
+### UX Mapping
 
-| Confidence | Behavior | Visual |
-|------------|----------|--------|
-| >= 0.80 | Show classified type | Type pill with solid background in the type's color; no user action needed |
-| 0.50 - 0.79 | Show type, offer alternatives | Type pill with dashed border; clicking opens a dropdown with top alternatives |
-| < 0.50 | Let user pick | No pre-selected type; show top 2-3 options as selectable pills |
+| Classification result | Preview UX |
+|----------------------|------------|
+| Single type, no alternatives | Solid type pill |
+| Multiple types (compound pipeline) | Pipeline visualization (ordered pill sequence) |
+| Types + alternatives | Dashed pill + dropdown (rare) |
+| `chat` type | Redirects to conversational flow; no card created |
 
 ### Type Indicator
 
 | Aspect | Specification |
 |--------|---------------|
 | Position | Inline with the input bar, leading edge (left side) |
-| Content | Type label (e.g., "SQL", "Python", "Hypothesis") |
+| Content | Type label (e.g., "SQL", "Python", "Note") |
 | Colors | Foreground, background, and border from Input Type Colors in README.md |
 | Animation | Fade transition (150ms, `easing.inOut`) when type changes |
-| Interaction | Clickable -- opens type selector dropdown regardless of confidence |
+| Interaction | Clickable -- opens type selector dropdown |
 | Empty state | No indicator shown until user has typed >= 3 characters |
 
 ### Type Selector Dropdown
 
 | Aspect | Specification |
 |--------|---------------|
-| Trigger | Click the type indicator, or automatic when confidence < 0.50 |
+| Trigger | Click the type indicator, or when alternatives are present |
 | Content | All seven types as selectable items, each with its color |
-| Ordering | Classifier-ranked (highest confidence first) when available; alphabetical otherwise |
+| Ordering | Classifier-ranked when available; alphabetical otherwise |
 | Selection | Click to override the classified type; override persists for this input until text changes significantly |
 | Dismiss | Click outside, Escape, or select a type |
 
@@ -211,7 +240,7 @@ A live type indicator that updates as the user types, showing what the system th
 
 | Step | Detail |
 |------|--------|
-| 1. Resolve type | Use the currently displayed type (classified or user-overridden) |
+| 1. Resolve types | Use the currently displayed pipeline (classified or user-overridden). Chat type skips card creation. |
 | 2. Extract content | `editor.getJSON()` for structured content with mention references |
 | 3. Create card | POST to card creation API with `{ type, content, mentions[] }` |
 | 4. Optimistic UI | Immediately add a placeholder card to the workspace (thinking state) |
@@ -221,9 +250,9 @@ A live type indicator that updates as the user types, showing what the system th
 
 ### Card Creation Payload
 
-```
+```json
 {
-  "type": "sql" | "python" | "literature" | "hypothesis" | "note" | "data_ingest" | "task",
+  "types": ["sql", "python"],
   "content": { /* TipTap JSON document */ },
   "mentions": [ { "cardId": "...", "label": "..." } ],
   "sessionId": "..."
@@ -261,10 +290,9 @@ Managed via Zustand (not global Redux -- local to the input surface).
 | State Field | Type | Purpose |
 |-------------|------|---------|
 | `editorContent` | TipTap JSON | Current editor document (source of truth is the editor instance) |
-| `classifiedType` | string or null | Result from classifier |
-| `confidence` | number or null | Classifier confidence score |
-| `alternatives` | array | Top alternative classifications |
-| `userOverrideType` | string or null | User-selected type override (takes precedence over classifier) |
+| `classifiedTypes` | `string[]` or null | Pipeline types from classifier |
+| `alternatives` | `string[][]` or null | Alternative pipelines from classifier |
+| `userOverrideTypes` | `string[]` or null | User-selected type override (takes precedence over classifier) |
 | `isClassifying` | boolean | Whether a classification request is in-flight |
 | `isSubmitting` | boolean | Whether a submit request is in-flight |
 | `classifierMode` | `"local"` or `"api"` | Which classification backend is active |

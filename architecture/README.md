@@ -4,7 +4,7 @@ This document is the entry point for The Helm's system specification. It describ
 
 ## System Overview
 
-The Helm is a unified research workspace where scientists interact through a single input surface. The system receives free-form input (SQL, Python, hypotheses, natural language), classifies it, transforms it into executable form, runs it against real data sources, and returns structured results as named cards. Cards accumulate into a session workspace that supports collaboration, error recovery, data ingestion, and narrative composition.
+The Helm is a unified research workspace where scientists interact through a single input surface. The system receives free-form input (SQL, Python, natural language, conversational questions), classifies it, transforms it into executable form, runs it against real data sources, and returns structured results as named cards. Cards accumulate into a session workspace that supports collaboration, error recovery, data ingestion, and narrative composition.
 
 ## Conceptual Layers
 
@@ -82,10 +82,10 @@ Extracted from the animated demo — these are the authoritative visual constant
 | SQL | `#2B6CB0` | `#E3EDF7` | `#B0CDE4` |
 | Python | `#7B4EA3` | `#EDE5F5` | `#C4B0DA` |
 | Literature | `#1A7F5A` | `#E0F2EA` | `#A8D8C4` |
-| Hypothesis | `#B8660D` | `#FBF0E0` | `#E4C890` |
 | Note | `#7A6340` | `#F5F0E7` | `#D6C8AD` |
 | Data Ingest | `#2D8E8E` | `#E0F2F2` | `#A8D6D6` |
 | Task | `#7A3B5E` | `#F2E6EE` | `#C9A3B8` |
+| Chat | `#B8660D` | `#FBF0E0` | `#E4C890` |
 
 ### Status Colors
 

@@ -78,15 +78,26 @@ Purpose-built for OS file drops. Headless `useDropzone` hook for full UI control
 
 ## Backend & Data
 
-### Input Classification: Qwen3.5-4B Local via Ollama
+### Input Classification: Three Independent Models
 **Source:** [RSH-005](research/rsh-005-input-classification.md)
 
-This is an intent classification problem (what the user wants to DO), not topic classification (what the input is ABOUT). Domain language (biology/metagenomics) appears across all seven categories (SQL, Python, Literature, Hypothesis, Note, Data Ingest, Task); instruction-tuned LLMs have a structural advantage.
+This is an intent classification problem (what the user wants to DO), not topic classification (what the input is ABOUT). Domain language (biology/metagenomics) appears across all categories; instruction-tuned LLMs have a structural advantage.
 
-- **Local**: Qwen3.5-4B via Ollama with `/no_think` mode and structured JSON output. ~100-200ms latency, zero per-token cost. Grammar-constrained decoding ensures valid JSON.
+Three independent models serve distinct roles:
+
+| Role | Model class | When |
+|------|-------------|------|
+| Classification | Qwen3.5-4B (Ollama, always hot in VRAM) | On every keystroke (debounced) |
+| Transformation | Larger code-specialized model | On submit, swapped in |
+| Chat / error resolution | Reasoning model with thinking + tool calling | In card chat panels |
+
+Classification details:
+- **Output schema**: pipeline of types (`{"types": ["sql", "python"], "alternatives": [["note"]]}`), not a single type with confidence score.
+- **Seven types**: `sql`, `python`, `literature`, `note`, `data_ingest`, `task`, `chat`. Hypothesis is not a type -- hypothesis-like inputs decompose into actionable types (e.g., `["sql", "python"]` to test, `["note"]` to record).
+- **Capability manifest**: dynamic system prompt describing available types, data sources, and tools. Updates as tools are registered.
 - **API fallback**: Gemini 2.5 Flash Lite or GPT-4.1 nano when local isn't available.
 - **Upgrade path**: Qwen3.5-9B if 4B isn't accurate enough; LoRA fine-tuning on Qwen3-1.7B if labeled data accumulates.
-- **Confidence UX**: show type if ≥0.80, offer alternatives if 0.50-0.79, let user pick if <0.50.
+- **Alternatives UX**: alternatives appear only for ambiguous claim/observation inputs (rare). Clear-signal inputs get a solid type pill with no dropdown.
 
 ### File Handling: tus.io + Uppy
 **Source:** [RSH-008](research/rsh-008-file-handling-and-ingest.md)

@@ -153,7 +153,7 @@ When a card is selected for detail view, the card container and the detail panel
 |-------|------|-------------|
 | `id` | `string` | Unique identifier |
 | `shortname` | `string` | User-visible short name, used for cross-card references |
-| `type` | `CardType` | `'sql' \| 'python' \| 'literature' \| 'hypothesis' \| 'note' \| 'data_ingest'` |
+| `type` | `CardType` | `'sql' \| 'python' \| 'literature' \| 'note' \| 'data_ingest' \| 'task'` |
 | `status` | `CardStatus` | `'thinking' \| 'running' \| 'complete' \| 'error'` |
 | `content` | `string` | Final rendered content |
 | `input` | `string` | Original user input |

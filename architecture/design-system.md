@@ -74,7 +74,7 @@ The contract defines the token shape without values. All consuming code referenc
 | `easing.inOut` | Easing — inOut |
 | `easing.outQuart` | Easing — outQuart |
 
-`[type]` = `sql`, `python`, `literature`, `hypothesis`, `note`, `dataIngest`, `task`.
+`[type]` = `sql`, `python`, `literature`, `note`, `dataIngest`, `task`, `chat`.
 
 ### Sprinkles Properties
 
