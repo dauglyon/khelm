@@ -1,12 +1,11 @@
 import { forwardRef, type ElementType, type HTMLAttributes, type ReactNode } from 'react';
-import { sprinkles } from '@/theme/sprinkles.css';
-import type { Sprinkles } from '@/theme/sprinkles.css';
+import { sprinkles } from '@/theme';
+import type { Sprinkles } from '@/theme';
 
 type SpacingScale = NonNullable<Sprinkles['gap']>;
 type FlexDirection = NonNullable<Sprinkles['flexDirection']>;
 type AlignItems = NonNullable<Sprinkles['alignItems']>;
 type JustifyContent = NonNullable<Sprinkles['justifyContent']>;
-type FlexWrap = NonNullable<Sprinkles['flexWrap']>;
 
 export interface StackProps extends HTMLAttributes<HTMLElement> {
   /** Flex direction. Default: 'column' */
@@ -17,19 +16,19 @@ export interface StackProps extends HTMLAttributes<HTMLElement> {
   align?: AlignItems;
   /** Justify content along main axis */
   justify?: JustifyContent;
-  /** Flex wrap behavior */
-  wrap?: FlexWrap;
+  /** Whether to allow flex items to wrap. Default: false */
+  wrap?: boolean;
   /** Polymorphic element type. Default: 'div' */
   as?: ElementType;
-  children?: ReactNode;
+  children: ReactNode;
 }
 
 export const Stack = forwardRef<HTMLElement, StackProps>(function Stack(
   {
     direction = 'column',
     gap = 8,
-    align,
-    justify,
+    align = 'stretch',
+    justify = 'flex-start',
     wrap,
     as: Component = 'div',
     className,
@@ -42,9 +41,9 @@ export const Stack = forwardRef<HTMLElement, StackProps>(function Stack(
     display: 'flex',
     flexDirection: direction,
     gap,
-    ...(align != null ? { alignItems: align } : {}),
-    ...(justify != null ? { justifyContent: justify } : {}),
-    ...(wrap != null ? { flexWrap: wrap } : {}),
+    alignItems: align,
+    justifyContent: justify,
+    flexWrap: wrap ? 'wrap' : 'nowrap',
   });
 
   const mergedClassName = className

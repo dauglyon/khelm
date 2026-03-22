@@ -19,55 +19,99 @@ describe('Stack', () => {
     expect(el.tagName).toBe('DIV');
   });
 
-  it('applies column direction by default', () => {
-    render(<Stack data-testid="stack">content</Stack>);
-    const el = screen.getByTestId('stack');
-    expect(el.style.display || el.className).toBeTruthy();
-  });
+  it('direction prop produces different classNames for column vs row', () => {
+    const { unmount } = render(
+      <Stack direction="column" data-testid="stack">
+        content
+      </Stack>
+    );
+    const columnClass = screen.getByTestId('stack').className;
+    unmount();
 
-  it('accepts direction prop', () => {
     render(
       <Stack direction="row" data-testid="stack">
         content
       </Stack>
     );
-    expect(screen.getByTestId('stack')).toBeInTheDocument();
+    const rowClass = screen.getByTestId('stack').className;
+
+    expect(columnClass).not.toBe(rowClass);
   });
 
-  it('accepts gap prop', () => {
+  it('gap prop produces different classNames for different values', () => {
+    const { unmount } = render(
+      <Stack gap={4} data-testid="stack">
+        content
+      </Stack>
+    );
+    const gap4Class = screen.getByTestId('stack').className;
+    unmount();
+
     render(
       <Stack gap={16} data-testid="stack">
         content
       </Stack>
     );
-    expect(screen.getByTestId('stack')).toBeInTheDocument();
+    const gap16Class = screen.getByTestId('stack').className;
+
+    expect(gap4Class).not.toBe(gap16Class);
   });
 
-  it('accepts align prop', () => {
+  it('wrap prop produces different classNames for true vs false', () => {
+    const { unmount } = render(
+      <Stack wrap={true} data-testid="stack">
+        content
+      </Stack>
+    );
+    const wrappedClass = screen.getByTestId('stack').className;
+    unmount();
+
     render(
+      <Stack wrap={false} data-testid="stack">
+        content
+      </Stack>
+    );
+    const nowrapClass = screen.getByTestId('stack').className;
+
+    expect(wrappedClass).not.toBe(nowrapClass);
+  });
+
+  it('align prop produces different classNames for different values', () => {
+    const { unmount } = render(
       <Stack align="center" data-testid="stack">
         content
       </Stack>
     );
-    expect(screen.getByTestId('stack')).toBeInTheDocument();
+    const centerClass = screen.getByTestId('stack').className;
+    unmount();
+
+    render(
+      <Stack align="flex-start" data-testid="stack">
+        content
+      </Stack>
+    );
+    const startClass = screen.getByTestId('stack').className;
+
+    expect(centerClass).not.toBe(startClass);
   });
 
-  it('accepts justify prop', () => {
+  it('justify prop produces different classNames for different values', () => {
+    const { unmount } = render(
+      <Stack justify="center" data-testid="stack">
+        content
+      </Stack>
+    );
+    const centerClass = screen.getByTestId('stack').className;
+    unmount();
+
     render(
       <Stack justify="space-between" data-testid="stack">
         content
       </Stack>
     );
-    expect(screen.getByTestId('stack')).toBeInTheDocument();
-  });
+    const spaceBetweenClass = screen.getByTestId('stack').className;
 
-  it('accepts wrap prop', () => {
-    render(
-      <Stack wrap="wrap" data-testid="stack">
-        content
-      </Stack>
-    );
-    expect(screen.getByTestId('stack')).toBeInTheDocument();
+    expect(centerClass).not.toBe(spaceBetweenClass);
   });
 
   it('supports polymorphic "as" prop', () => {
