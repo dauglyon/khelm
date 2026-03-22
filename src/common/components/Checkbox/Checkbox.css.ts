@@ -2,6 +2,7 @@ import { style } from '@vanilla-extract/css';
 import { vars } from '@/theme';
 
 export const checkboxLabel = style({
+  position: 'relative',
   display: 'inline-flex',
   alignItems: 'center',
   cursor: 'pointer',

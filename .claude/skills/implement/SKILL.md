@@ -93,7 +93,7 @@ Go through each item. A failure on ANY single item means REJECT.
 5. **Test quality** — do tests assert on specific values and behaviors, or do they just check truthy/status codes? Weak tests are a REJECT.
 6. **Anti-patterns** — does the code violate any anti-pattern listed in the task spec?
 7. **Completeness** — is anything from the spec missing, deferred with TODO, or commented out?
-8. **Integration proofs** — run all tests. Any test failure is a REJECT.
+8. **Integration proofs** — run ALL project tests (`npx vitest run`), not just this component's tests. Any failure ANYWHERE in the suite is a REJECT, even if unrelated to this task.
 9. **Design token compliance** — do colors, fonts, spacing, and animations use the design tokens from `architecture/README.md`, or were they invented? Divergence from design tokens is a REJECT.
 
 ## Bash Command Rules
