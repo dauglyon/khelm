@@ -39,7 +39,7 @@ The design-system domain provides the visual foundation for The Helm: a vanilla-
 | 05 | Easing constants | 01 | done | done |
 | 06 | CSS keyframe animations | 01, 05 | done | done |
 | 07 | LazyMotion provider | none | done | done |
-| 08 | Motion variants | 05, 07 | pending | done |
+| 08 | Motion variants | 05, 07 | done | done |
 | 09 | Stack component | 02 | pending | done |
 | 10 | Icon component | 02 | pending | done |
 | 11 | Spinner component | 02, 06 | pending | done |
