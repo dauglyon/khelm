@@ -5,6 +5,9 @@ export const editorWrapper = style({
   flex: 1,
   minWidth: 0,
   position: 'relative',
+  backgroundColor: vars.color.surface,
+  border: '1px solid ' + vars.color.border,
+  borderRadius: '8px',
 });
 
 export const editorContainer = style({
@@ -48,5 +51,5 @@ globalStyle(`${editorContainer} .ProseMirror p.is-editor-empty:first-child::befo
 
 export const disabled = style({
   opacity: 0.5,
-  pointerEvents: 'none',
+  cursor: 'not-allowed',
 });

@@ -18,7 +18,7 @@ The input surface is the single entry point for all user intent in The Helm. It 
 | ID | Summary | Files | Deps | Status | Preflight |
 |----|---------|-------|------|--------|-----------|
 | 01 | Input surface Zustand store | 2 | design-system | done | done |
-| 02 | TipTap single-line editor | 3 | 01, design-system | pending | done |
+| 02 | TipTap single-line editor | 3 | 01, design-system | done | done |
 | 03 | Mention pill node view | 2 | 02, design-system | pending | done |
 | 04 | Suggestion dropdown | 3 | 03, design-system | pending | done |
 | 05 | Classification service | 3 | 01 | pending | done |

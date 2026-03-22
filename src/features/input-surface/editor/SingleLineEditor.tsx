@@ -11,7 +11,7 @@ import {
   disabled as disabledClass,
 } from './singleLineEditor.css';
 
-// Single-line document: only text content, no block-level nodes
+// Single-line document: single paragraph node for compatibility with Mention inline nodes (see R12)
 const SingleLineDocument = Document.extend({
   content: 'paragraph',
 });
@@ -62,8 +62,18 @@ export function SingleLineEditor({
         return false;
       },
       transformPastedText: (text) => {
-        // Strip newlines from pasted text
+        // Replace newlines with spaces when pasting plain text
         return text.replace(/[\n\r]/g, ' ');
+      },
+      transformPastedHTML: (html) => {
+        // Strip block-level tags and replace with spaces, then wrap in a single <p>
+        const flattened = html
+          .replace(/<br\s*\/?>/gi, ' ')
+          .replace(/<\/p>/gi, ' ')
+          .replace(/<\/div>/gi, ' ')
+          .replace(/<p[^>]*>/gi, '')
+          .replace(/<div[^>]*>/gi, '');
+        return `<p>${flattened}</p>`;
       },
     },
     onUpdate: ({ editor: ed }) => {
