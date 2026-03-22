@@ -47,7 +47,7 @@ describe('RequireSession', () => {
 
   it('shows error state when session returns 404', async () => {
     server.use(
-      http.get('*/api/sessions/:id', () => {
+      http.get('*/sessions/:id', () => {
         return HttpResponse.json({ message: 'Not found' }, { status: 404 });
       })
     );

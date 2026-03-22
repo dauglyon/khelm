@@ -18,7 +18,7 @@ security:
   - BearerAuth: []
 
 paths:
-  /api/sessions:
+  /sessions:
     get:
       operationId: listSessions
       summary: List sessions for current user
@@ -64,7 +64,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/sessions/{id}:
+  /sessions/{id}:
     get:
       operationId: getSession
       summary: Get session by ID
@@ -139,7 +139,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/sessions/{id}/join:
+  /sessions/{id}/join:
     post:
       operationId: joinSession
       summary: Join a session via invite
@@ -164,7 +164,7 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
-  /api/sessions/{id}/members:
+  /sessions/{id}/members:
     get:
       operationId: listSessionMembers
       summary: List session members
@@ -254,8 +254,7 @@ components:
         displayName:
           type: string
         avatarUrl:
-          type: string
-          nullable: true
+          type: ['string', 'null']
 
     CreateSessionRequest:
       type: object
