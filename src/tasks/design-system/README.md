@@ -45,7 +45,7 @@ The design-system domain provides the visual foundation for The Helm: a vanilla-
 | 11 | Spinner component | 02, 06 | done | done |
 | 12 | Skeleton component | 02, 06 | done | done |
 | 13 | Button component | 02, 03, 10, 11 | done | done |
-| 14 | IconButton component | 13 | pending | done |
+| 14 | IconButton component | 13 | done | done |
 | 15 | TextInput component | 02, 03 | pending | done |
 | 16 | Select component | 15, 10 | pending | done |
 | 17 | Checkbox component | 02, 03 | pending | done |

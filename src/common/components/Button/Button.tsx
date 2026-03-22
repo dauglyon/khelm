@@ -8,9 +8,9 @@ import {
   iconSlot,
 } from './Button.css';
 
-type ButtonVariant = 'solid' | 'outline' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
-type ButtonColor = 'primary' | 'danger' | 'neutral';
+export type ButtonVariant = 'solid' | 'outline' | 'ghost';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonColor = 'primary' | 'danger' | 'neutral';
 
 export interface ButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
@@ -28,7 +28,7 @@ export interface ButtonProps
   children?: ReactNode;
 }
 
-const spinnerSizeMap: Record<ButtonSize, 16 | 20 | 24> = {
+export const spinnerSizeMap: Record<ButtonSize, 16 | 20 | 24> = {
   sm: 16,
   md: 20,
   lg: 24,

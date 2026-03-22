@@ -6,11 +6,13 @@ import {
   colorVariantStyles,
   disabledStyle,
 } from '@/common/components/Button/Button.css';
+import {
+  type ButtonVariant,
+  type ButtonSize,
+  type ButtonColor,
+  spinnerSizeMap,
+} from '@/common/components/Button/Button';
 import { squareSizeVariants } from './IconButton.css';
-
-type ButtonVariant = 'solid' | 'outline' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
-type ButtonColor = 'primary' | 'danger' | 'neutral';
 
 export interface IconButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'children'> {
@@ -27,12 +29,6 @@ export interface IconButtonProps
   /** Loading state: replaces icon with Spinner. Default: false */
   loading?: boolean;
 }
-
-const spinnerSizeMap: Record<ButtonSize, 16 | 20 | 24> = {
-  sm: 16,
-  md: 20,
-  lg: 24,
-};
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   function IconButton(

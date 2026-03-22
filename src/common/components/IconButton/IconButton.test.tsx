@@ -90,16 +90,7 @@ describe('IconButton', () => {
         size="sm"
       />
     );
-    expect(screen.getByRole('button')).toBeInTheDocument();
-
-    rerender(
-      <IconButton
-        aria-label="Close"
-        icon={<span>X</span>}
-        size="md"
-      />
-    );
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    const smClassName = screen.getByRole('button').className;
 
     rerender(
       <IconButton
@@ -108,7 +99,31 @@ describe('IconButton', () => {
         size="lg"
       />
     );
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    const lgClassName = screen.getByRole('button').className;
+
+    expect(smClassName).not.toBe(lgClassName);
+  });
+
+  it('loading disables the button', () => {
+    render(
+      <IconButton
+        aria-label="Loading action"
+        icon={<span>X</span>}
+        loading
+      />
+    );
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('loading sets aria-busy="true"', () => {
+    render(
+      <IconButton
+        aria-label="Loading action"
+        icon={<span>X</span>}
+        loading
+      />
+    );
+    expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'true');
   });
 
   it('supports variant and color props', () => {
