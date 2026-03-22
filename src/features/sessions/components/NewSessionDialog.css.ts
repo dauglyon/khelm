@@ -22,6 +22,7 @@ export const form = style({
 });
 
 export const label = style({
+  display: 'block',
   fontSize: '14px',
   fontWeight: 500,
   color: vars.color.textMid,
