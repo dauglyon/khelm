@@ -28,7 +28,7 @@ The app-shell domain delivers the top-level application skeleton: Vite 8 project
 | 09 | MSW browser + node worker setup | 08 | done | done |
 | 10 | Session Zustand store + TanStack Query hooks | 08, 02 | done | done |
 | 11 | SessionList + SessionCard UI | 10, 05 | done | done |
-| 12 | NewSessionDialog + create flow | 10, 05 | pending | done |
+| 12 | NewSessionDialog + create flow | 10, 05 | done | done |
 | 13 | SessionHeader -- editable title + member display | 10, 05 | pending | done |
 
 ## Critical Path DAG

@@ -51,7 +51,7 @@ export function NewSessionDialog() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter session title..."
             aria-label="Session title"
-            error={error ? 'Failed to create session' : undefined}
+            error={!!error}
           />
         </div>
         {error && (

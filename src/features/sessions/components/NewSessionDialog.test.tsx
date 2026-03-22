@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/mocks/server';
 import { NewSessionDialog } from './NewSessionDialog';
 
 function renderDialog() {
@@ -43,6 +45,28 @@ describe('NewSessionDialog', () => {
     await userEvent.type(input, 'My New Session');
     const createBtn = screen.getByText('Create');
     expect(createBtn).not.toBeDisabled();
+  });
+
+  it('shows an error alert when session creation fails', async () => {
+    server.use(
+      http.post('*/sessions', () => {
+        return HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+      })
+    );
+
+    renderDialog();
+    const input = screen.getByLabelText('Session title');
+    await userEvent.type(input, 'My Session');
+
+    const createBtn = screen.getByText('Create');
+    await userEvent.click(createBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Failed to create session. Please try again.'
+    );
   });
 
   it('submitting creates a session and navigates', async () => {
