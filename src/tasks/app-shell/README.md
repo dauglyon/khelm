@@ -17,19 +17,19 @@ The app-shell domain delivers the top-level application skeleton: Vite 8 project
 
 | ID | Summary | Deps | Status | Preflight |
 |----|---------|------|--------|-----------|
-| 01 | Vite 8 project scaffold + config | design-system | pending | `npx vite --version` outputs 8.x |
-| 02 | Environment config + provider composition | 01 | pending | dev server starts, providers mount |
-| 03 | React Router v7 route definitions + page stubs | 02 | pending | all 7 routes resolve to stub pages |
-| 04 | RequireAuth + RequireSession route guards | 03 | pending | unauthenticated redirect works |
-| 05 | Layout skeleton -- header, toolbar, main regions | 03 | pending | regions render at spec dimensions |
-| 06 | Layout skeleton -- collapsible sidebar | 05 | pending | sidebar toggles with animation |
-| 07 | OpenAPI spec authoring (sessions API) | (none) | pending | spectral lint passes |
-| 08 | Orval config + code generation pipeline | 07, 01 | pending | `npm run generate:api` produces output |
-| 09 | MSW browser + node worker setup | 08 | pending | mock worker intercepts in dev + test |
-| 10 | Session Zustand store + TanStack Query hooks | 08, 02 | pending | store actions update state correctly |
-| 11 | SessionList + SessionCard UI | 10, 05 | pending | home page renders mocked sessions |
-| 12 | NewSessionDialog + create flow | 10, 05 | pending | creating session navigates to workspace |
-| 13 | SessionHeader -- editable title + member display | 10, 05 | pending | inline edit persists via API |
+| 01 | Vite 8 project scaffold + config | design-system | done | done |
+| 02 | Environment config + provider composition | 01 | pending | done |
+| 03 | React Router v7 route definitions + page stubs | 02 | pending | done |
+| 04 | RequireAuth + RequireSession route guards | 03 | pending | done |
+| 05 | Layout skeleton -- header, toolbar, main regions | 03 | pending | done |
+| 06 | Layout skeleton -- collapsible sidebar | 05 | pending | done |
+| 07 | OpenAPI spec authoring (sessions API) | (none) | pending | done |
+| 08 | Orval config + code generation pipeline | 07, 01 | pending | done |
+| 09 | MSW browser + node worker setup | 08 | pending | done |
+| 10 | Session Zustand store + TanStack Query hooks | 08, 02 | pending | done |
+| 11 | SessionList + SessionCard UI | 10, 05 | pending | done |
+| 12 | NewSessionDialog + create flow | 10, 05 | pending | done |
+| 13 | SessionHeader -- editable title + member display | 10, 05 | pending | done |
 
 ## Critical Path DAG
 
