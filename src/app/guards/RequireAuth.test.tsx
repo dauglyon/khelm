@@ -1,9 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createMemoryRouter, RouterProvider } from 'react-router';
+import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/common/stores/authStore';
 import { RequireAuth } from './RequireAuth';
+
+function LoginPageWithState() {
+  const location = useLocation();
+  return (
+    <div>
+      <span>Login Page</span>
+      {location.state?.from?.pathname && (
+        <span data-testid="redirect-from">{location.state.from.pathname}</span>
+      )}
+    </div>
+  );
+}
 
 function renderGuard(initialPath: string) {
   const router = createMemoryRouter(
@@ -14,7 +26,7 @@ function renderGuard(initialPath: string) {
           { path: '/protected', element: <div>Protected Content</div> },
         ],
       },
-      { path: '/login', element: <div>Login Page</div> },
+      { path: '/login', element: <LoginPageWithState /> },
     ],
     { initialEntries: [initialPath] }
   );
@@ -46,7 +58,6 @@ describe('RequireAuth', () => {
 
   it('stores intended destination for post-login redirect', () => {
     renderGuard('/protected');
-    // User should be redirected to /login page
-    expect(screen.getByText('Login Page')).toBeInTheDocument();
+    expect(screen.getByTestId('redirect-from')).toHaveTextContent('/protected');
   });
 });

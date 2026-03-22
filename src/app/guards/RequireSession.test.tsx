@@ -2,6 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/mocks/server';
 import { RequireSession } from './RequireSession';
 
 function renderGuard(initialPath: string) {
@@ -41,5 +43,17 @@ describe('RequireSession', () => {
   it('shows loading state initially', () => {
     renderGuard('/session/test-id');
     expect(screen.getByTestId('session-loading')).toBeInTheDocument();
+  });
+
+  it('shows error state when session returns 404', async () => {
+    server.use(
+      http.get('*/api/sessions/:id', () => {
+        return HttpResponse.json({ message: 'Not found' }, { status: 404 });
+      })
+    );
+    renderGuard('/session/test-id');
+    await waitFor(() => {
+      expect(screen.getByTestId('session-error')).toBeInTheDocument();
+    });
   });
 });
