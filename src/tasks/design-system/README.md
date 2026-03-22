@@ -36,7 +36,7 @@ The design-system domain provides the visual foundation for The Helm: a vanilla-
 | 02 | Sprinkles utility API | 01 | done | done |
 | 03 | Typography scale and font-face | 01 | done | done |
 | 04 | Theme barrel export | 01, 02, 03 | pending | done |
-| 05 | Easing constants | 01 | pending | done |
+| 05 | Easing constants | 01 | done | done |
 | 06 | CSS keyframe animations | 01, 05 | pending | done |
 | 07 | LazyMotion provider | none | done | done |
 | 08 | Motion variants | 05, 07 | pending | done |
