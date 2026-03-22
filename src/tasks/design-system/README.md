@@ -51,7 +51,7 @@ The design-system domain provides the visual foundation for The Helm: a vanilla-
 | 17 | Checkbox component | 02, 03 | done | done |
 | 18 | Chip component | 02, 03, 10 | done | done |
 | 19 | Badge component | 02, 06 | done | done |
-| 20 | Card component | 02, 08 | pending | done |
+| 20 | Card component | 02, 08 | done | done |
 
 ## Critical Path DAG
 

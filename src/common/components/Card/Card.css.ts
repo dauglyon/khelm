@@ -35,6 +35,7 @@ const inputTypes: InputType[] = [
   'hypothesis',
   'note',
   'dataIngest',
+  'task',
 ];
 
 export const accentColorVariants = styleVariants(
@@ -45,5 +46,5 @@ export const accentColorVariants = styleVariants(
         backgroundColor: vars.color.inputType[type].border,
       },
     ])
-  ) as Record<InputType, { backgroundColor: string }>
+  ) satisfies Record<InputType, { backgroundColor: string }>
 );
