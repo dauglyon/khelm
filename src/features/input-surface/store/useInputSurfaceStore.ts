@@ -4,16 +4,14 @@ import type { InputType } from '@/theme';
 export type { InputType };
 
 export interface ClassificationResult {
-  type: InputType;
-  confidence: number;
-  alternatives: Array<{ type: InputType; confidence: number }>;
+  types: string[];
+  alternatives?: string[][];
 }
 
 export interface InputSurfaceState {
-  classifiedType: InputType | null;
-  confidence: number | null;
-  alternatives: Array<{ type: InputType; confidence: number }>;
-  userOverrideType: InputType | null;
+  classifiedTypes: string[] | null;
+  alternatives: string[][] | null;
+  userOverrideTypes: string[] | null;
   isClassifying: boolean;
   isSubmitting: boolean;
   classifierMode: 'local' | 'api';
@@ -21,22 +19,21 @@ export interface InputSurfaceState {
 
 export interface InputSurfaceActions {
   setClassification: (result: ClassificationResult) => void;
-  setUserOverride: (type: InputType) => void;
-  clearUserOverride: () => void;
+  setUserOverrideTypes: (types: string[] | null) => void;
+  clearUserOverrideTypes: () => void;
   setIsClassifying: (flag: boolean) => void;
   setIsSubmitting: (flag: boolean) => void;
   setClassifierMode: (mode: 'local' | 'api') => void;
   reset: () => void;
-  resolvedType: () => InputType | null;
+  resolvedTypes: () => string[] | null;
 }
 
 export type InputSurfaceStore = InputSurfaceState & InputSurfaceActions;
 
 const initialState: InputSurfaceState = {
-  classifiedType: null,
-  confidence: null,
-  alternatives: [],
-  userOverrideType: null,
+  classifiedTypes: null,
+  alternatives: null,
+  userOverrideTypes: null,
   isClassifying: false,
   isSubmitting: false,
   classifierMode: 'local',
@@ -47,17 +44,16 @@ export const useInputSurfaceStore = create<InputSurfaceStore>()((set, get) => ({
 
   setClassification: (result: ClassificationResult) =>
     set({
-      classifiedType: result.type,
-      confidence: result.confidence,
-      alternatives: result.alternatives,
-      userOverrideType: null,
+      classifiedTypes: result.types,
+      alternatives: result.alternatives ?? null,
+      userOverrideTypes: null,
     }),
 
-  setUserOverride: (type: InputType) =>
-    set({ userOverrideType: type }),
+  setUserOverrideTypes: (types: string[] | null) =>
+    set({ userOverrideTypes: types }),
 
-  clearUserOverride: () =>
-    set({ userOverrideType: null }),
+  clearUserOverrideTypes: () =>
+    set({ userOverrideTypes: null }),
 
   setIsClassifying: (flag: boolean) =>
     set({ isClassifying: flag }),
@@ -70,8 +66,8 @@ export const useInputSurfaceStore = create<InputSurfaceStore>()((set, get) => ({
 
   reset: () => set(initialState),
 
-  resolvedType: () => {
+  resolvedTypes: () => {
     const state = get();
-    return state.userOverrideType ?? state.classifiedType;
+    return state.userOverrideTypes ?? state.classifiedTypes;
   },
 }));

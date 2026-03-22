@@ -101,7 +101,7 @@ describe('classificationService', () => {
       classifier.destroy();
     });
 
-    it('writes classification result to store on success', async () => {
+    it('writes classification result to store on success (normalizes wire format to pipeline arrays)', async () => {
       vi.useRealTimers();
 
       const classificationResult = {
@@ -125,9 +125,8 @@ describe('classificationService', () => {
       await new Promise((r) => setTimeout(r, 500));
 
       expect(mockStore.setClassification).toHaveBeenCalledWith({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [{ type: 'python', confidence: 0.05 }],
+        types: ['sql'],
+        alternatives: [['python']],
       });
 
       classifier.destroy();
@@ -154,9 +153,7 @@ describe('classificationService', () => {
       await new Promise((r) => setTimeout(r, 500));
 
       expect(mockStore.setClassification).toHaveBeenCalledWith({
-        type: 'dataIngest',
-        confidence: 0.90,
-        alternatives: [],
+        types: ['dataIngest'],
       });
 
       classifier.destroy();
@@ -203,9 +200,8 @@ describe('classificationService', () => {
       await new Promise((r) => setTimeout(r, 500));
 
       expect(mockStore.setClassification).toHaveBeenCalledWith({
-        type: 'literature',
-        confidence: 0.88,
-        alternatives: [{ type: 'chat', confidence: 0.08 }],
+        types: ['literature'],
+        alternatives: [['chat']],
       });
 
       classifier.destroy();

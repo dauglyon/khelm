@@ -8,17 +8,15 @@ describe('ClassificationPreview', () => {
     useInputSurfaceStore.getState().reset();
   });
 
-  it('shows nothing when classifiedType is null and not classifying', () => {
+  it('shows nothing when classifiedTypes is null and not classifying', () => {
     const { container } = render(<ClassificationPreview />);
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows solid pill for confidence >= 0.80', () => {
+  it('shows solid pill when no alternatives present (high confidence equivalent)', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [{ type: 'python', confidence: 0.05 }],
+        types: ['sql'],
       });
     });
 
@@ -29,12 +27,11 @@ describe('ClassificationPreview', () => {
     expect(indicator.textContent).toBe('SQL');
   });
 
-  it('shows dashed border for confidence 0.50-0.79', () => {
+  it('shows dashed border when alternatives are present (uncertain classification)', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'chat',
-        confidence: 0.65,
-        alternatives: [{ type: 'note', confidence: 0.20 }],
+        types: ['chat'],
+        alternatives: [['note']],
       });
     });
 
@@ -45,36 +42,25 @@ describe('ClassificationPreview', () => {
     expect(indicator.textContent).toBe('Chat');
   });
 
-  it('shows multiple selectable pills for confidence < 0.50', () => {
+  it('shows compound pipeline label when types array has >1 element', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'note',
-        confidence: 0.35,
-        alternatives: [
-          { type: 'chat', confidence: 0.30 },
-          { type: 'literature', confidence: 0.20 },
-        ],
+        types: ['sql', 'python'],
       });
     });
 
-    // Note: since resolvedType will be 'note' (classifiedType is set),
-    // and confidence < 0.50, but resolvedType is not null, we show single pill
-    // The low-confidence multi-pill is for when resolvedType is null
-    // Actually, looking at the component logic again: when isLow && !hasOverride && resolvedType === null
-    // Since classifiedType = 'note', resolvedType = 'note' (not null)
-    // So it shows single pill with solid border (fallback)
     render(<ClassificationPreview />);
 
     const indicator = screen.getByTestId('type-indicator');
     expect(indicator).toBeTruthy();
+    expect(indicator.textContent).toBe('SQL → Python');
   });
 
   it('clicking indicator opens dropdown with all 7 types', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [{ type: 'python', confidence: 0.05 }],
+        types: ['sql'],
+        alternatives: [['python']],
       });
     });
 
@@ -90,12 +76,10 @@ describe('ClassificationPreview', () => {
     expect(options.length).toBe(7);
   });
 
-  it('selecting a type in dropdown calls setUserOverride', () => {
+  it('selecting a type in dropdown calls setUserOverrideTypes', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
     });
 
@@ -111,15 +95,13 @@ describe('ClassificationPreview', () => {
     fireEvent.click(pythonOption!);
 
     // Verify store was updated
-    expect(useInputSurfaceStore.getState().userOverrideType).toBe('python');
+    expect(useInputSurfaceStore.getState().userOverrideTypes).toEqual(['python']);
   });
 
   it('closes dropdown on Escape', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
     });
 
@@ -138,9 +120,7 @@ describe('ClassificationPreview', () => {
   it('shows pulse animation when isClassifying is true', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
       useInputSurfaceStore.getState().setIsClassifying(true);
     });
@@ -155,11 +135,9 @@ describe('ClassificationPreview', () => {
   it('shows override type instead of classified type', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
-      useInputSurfaceStore.getState().setUserOverride('python');
+      useInputSurfaceStore.getState().setUserOverrideTypes(['python']);
     });
 
     render(<ClassificationPreview />);
@@ -168,15 +146,11 @@ describe('ClassificationPreview', () => {
     expect(indicator.textContent).toBe('Python');
   });
 
-  it('orders dropdown items by confidence (highest first)', () => {
+  it('orders dropdown items with classified type first, then alternatives', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.70,
-        alternatives: [
-          { type: 'python', confidence: 0.20 },
-          { type: 'note', confidence: 0.05 },
-        ],
+        types: ['sql'],
+        alternatives: [['python'], ['note']],
       });
     });
 
@@ -185,18 +159,16 @@ describe('ClassificationPreview', () => {
     fireEvent.click(screen.getByTestId('type-indicator'));
 
     const options = screen.getAllByRole('option');
-    // First option should be SQL (classified, highest)
+    // First option should be SQL (classified)
     expect(options[0].textContent).toContain('SQL');
-    // Second should be Python (first alternative)
+    // Second should be Python (first alternative's first type)
     expect(options[1].textContent).toContain('Python');
   });
 
   it('closes dropdown when a type is selected', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
     });
 
@@ -210,5 +182,20 @@ describe('ClassificationPreview', () => {
     fireEvent.click(options[0]);
 
     expect(screen.queryByTestId('type-selector')).toBeNull();
+  });
+
+  it('shows solid border when user has overridden type', () => {
+    act(() => {
+      useInputSurfaceStore.getState().setClassification({
+        types: ['chat'],
+        alternatives: [['note']],
+      });
+      useInputSurfaceStore.getState().setUserOverrideTypes(['sql']);
+    });
+
+    render(<ClassificationPreview />);
+
+    const indicator = screen.getByTestId('type-indicator');
+    expect(indicator.textContent).toBe('SQL');
   });
 });

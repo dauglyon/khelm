@@ -9,95 +9,133 @@ describe('useInputSurfaceStore', () => {
 
   it('initializes with null classification', () => {
     const state = useInputSurfaceStore.getState();
-    expect(state.classifiedType).toBeNull();
-    expect(state.confidence).toBeNull();
-    expect(state.alternatives).toEqual([]);
-    expect(state.userOverrideType).toBeNull();
+    expect(state.classifiedTypes).toBeNull();
+    expect(state.alternatives).toBeNull();
+    expect(state.userOverrideTypes).toBeNull();
     expect(state.isClassifying).toBe(false);
     expect(state.isSubmitting).toBe(false);
     expect(state.classifierMode).toBe('local');
   });
 
   describe('setClassification', () => {
-    it('populates classifiedType, confidence, and alternatives', () => {
+    it('populates classifiedTypes and alternatives as pipeline arrays', () => {
       const result: ClassificationResult = {
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [
-          { type: 'python', confidence: 0.05 },
-          { type: 'note', confidence: 0.03 },
-        ],
+        types: ['sql', 'python'],
+        alternatives: [['note']],
       };
 
       useInputSurfaceStore.getState().setClassification(result);
       const state = useInputSurfaceStore.getState();
 
-      expect(state.classifiedType).toBe('sql');
-      expect(state.confidence).toBe(0.92);
-      expect(state.alternatives).toEqual([
-        { type: 'python', confidence: 0.05 },
-        { type: 'note', confidence: 0.03 },
-      ]);
+      expect(state.classifiedTypes).toEqual(['sql', 'python']);
+      expect(state.alternatives).toEqual([['note']]);
     });
 
-    it('clears userOverrideType when new classification arrives', () => {
+    it('stores single-element pipeline when only one type', () => {
+      const result: ClassificationResult = {
+        types: ['chat'],
+      };
+
+      useInputSurfaceStore.getState().setClassification(result);
+      const state = useInputSurfaceStore.getState();
+
+      expect(state.classifiedTypes).toEqual(['chat']);
+      expect(state.alternatives).toBeNull();
+    });
+
+    it('sets alternatives to null when omitted', () => {
+      const result: ClassificationResult = {
+        types: ['sql'],
+      };
+
+      useInputSurfaceStore.getState().setClassification(result);
+      const state = useInputSurfaceStore.getState();
+
+      expect(state.classifiedTypes).toEqual(['sql']);
+      expect(state.alternatives).toBeNull();
+    });
+
+    it('clears userOverrideTypes when new classification arrives', () => {
       const store = useInputSurfaceStore.getState();
-      store.setUserOverride('python');
-      expect(useInputSurfaceStore.getState().userOverrideType).toBe('python');
+      store.setUserOverrideTypes(['python']);
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toEqual(['python']);
 
       store.setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
 
-      expect(useInputSurfaceStore.getState().userOverrideType).toBeNull();
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toBeNull();
     });
   });
 
-  describe('setUserOverride', () => {
-    it('sets the user override type', () => {
-      useInputSurfaceStore.getState().setUserOverride('chat');
-      expect(useInputSurfaceStore.getState().userOverrideType).toBe('chat');
+  describe('setUserOverrideTypes', () => {
+    it('sets the user override pipeline array', () => {
+      useInputSurfaceStore.getState().setUserOverrideTypes(['chat']);
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toEqual(['chat']);
+    });
+
+    it('accepts multi-type pipeline overrides', () => {
+      useInputSurfaceStore.getState().setUserOverrideTypes(['sql', 'python']);
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toEqual(['sql', 'python']);
+    });
+
+    it('accepts null to clear the override', () => {
+      useInputSurfaceStore.getState().setUserOverrideTypes(['chat']);
+      useInputSurfaceStore.getState().setUserOverrideTypes(null);
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toBeNull();
     });
   });
 
-  describe('clearUserOverride', () => {
-    it('resets userOverrideType to null', () => {
+  describe('clearUserOverrideTypes', () => {
+    it('resets userOverrideTypes to null', () => {
       const store = useInputSurfaceStore.getState();
-      store.setUserOverride('python');
-      expect(useInputSurfaceStore.getState().userOverrideType).toBe('python');
+      store.setUserOverrideTypes(['python']);
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toEqual(['python']);
 
-      store.clearUserOverride();
-      expect(useInputSurfaceStore.getState().userOverrideType).toBeNull();
+      store.clearUserOverrideTypes();
+      expect(useInputSurfaceStore.getState().userOverrideTypes).toBeNull();
     });
   });
 
-  describe('resolvedType', () => {
-    it('returns classifiedType when no override is set', () => {
+  describe('resolvedTypes', () => {
+    it('returns classifiedTypes pipeline when no override is set', () => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'literature',
-        confidence: 0.85,
-        alternatives: [],
+        types: ['literature'],
       });
 
-      expect(useInputSurfaceStore.getState().resolvedType()).toBe('literature');
+      expect(useInputSurfaceStore.getState().resolvedTypes()).toEqual(['literature']);
     });
 
-    it('returns userOverrideType when set (takes precedence)', () => {
+    it('returns compound pipeline when classified as multi-type', () => {
+      useInputSurfaceStore.getState().setClassification({
+        types: ['sql', 'python'],
+      });
+
+      expect(useInputSurfaceStore.getState().resolvedTypes()).toEqual(['sql', 'python']);
+    });
+
+    it('returns userOverrideTypes pipeline when set (takes precedence over classifier)', () => {
       const store = useInputSurfaceStore.getState();
       store.setClassification({
-        type: 'literature',
-        confidence: 0.85,
-        alternatives: [],
+        types: ['literature'],
       });
-      store.setUserOverride('chat');
+      store.setUserOverrideTypes(['chat']);
 
-      expect(useInputSurfaceStore.getState().resolvedType()).toBe('chat');
+      expect(useInputSurfaceStore.getState().resolvedTypes()).toEqual(['chat']);
+    });
+
+    it('returns userOverrideTypes multi-type pipeline when set', () => {
+      const store = useInputSurfaceStore.getState();
+      store.setClassification({
+        types: ['chat'],
+      });
+      store.setUserOverrideTypes(['sql', 'python']);
+
+      expect(useInputSurfaceStore.getState().resolvedTypes()).toEqual(['sql', 'python']);
     });
 
     it('returns null when neither classified nor overridden', () => {
-      expect(useInputSurfaceStore.getState().resolvedType()).toBeNull();
+      expect(useInputSurfaceStore.getState().resolvedTypes()).toBeNull();
     });
   });
 
@@ -135,11 +173,10 @@ describe('useInputSurfaceStore', () => {
     it('returns all fields to initial values', () => {
       const store = useInputSurfaceStore.getState();
       store.setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [{ type: 'python', confidence: 0.05 }],
+        types: ['sql', 'python'],
+        alternatives: [['note']],
       });
-      store.setUserOverride('chat');
+      store.setUserOverrideTypes(['chat']);
       store.setIsClassifying(true);
       store.setIsSubmitting(true);
       store.setClassifierMode('api');
@@ -147,10 +184,9 @@ describe('useInputSurfaceStore', () => {
       store.reset();
 
       const state = useInputSurfaceStore.getState();
-      expect(state.classifiedType).toBeNull();
-      expect(state.confidence).toBeNull();
-      expect(state.alternatives).toEqual([]);
-      expect(state.userOverrideType).toBeNull();
+      expect(state.classifiedTypes).toBeNull();
+      expect(state.alternatives).toBeNull();
+      expect(state.userOverrideTypes).toBeNull();
       expect(state.isClassifying).toBe(false);
       expect(state.isSubmitting).toBe(false);
       expect(state.classifierMode).toBe('local');

@@ -65,7 +65,7 @@ describe('useSubmitFlow', () => {
     expect(onCardCreated).not.toHaveBeenCalled();
   });
 
-  it('does not submit when resolvedType is null', async () => {
+  it('does not submit when resolvedTypes is null', async () => {
     const editorRef = { current: createMockEditor() as never };
     const onCardCreated = vi.fn();
     const onError = vi.fn();
@@ -91,9 +91,7 @@ describe('useSubmitFlow', () => {
     // Set up classification
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
     });
 
@@ -114,19 +112,45 @@ describe('useSubmitFlow', () => {
     });
 
     expect(onCardCreated).toHaveBeenCalledWith({
-      type: 'sql',
+      types: ['sql'],
       content: expect.objectContaining({ type: 'doc' }),
       mentions: [{ cardId: 'card-1', label: 'query-1' }],
       sessionId: 'test-session',
     });
   });
 
+  it('submits with compound pipeline types', async () => {
+    act(() => {
+      useInputSurfaceStore.getState().setClassification({
+        types: ['sql', 'python'],
+      });
+    });
+
+    const mockEditor = createMockEditor();
+    const editorRef = { current: mockEditor as never };
+    const onCardCreated = vi.fn();
+
+    const { result } = renderHook(() =>
+      useSubmitFlow({
+        editorRef,
+        sessionId: 'test-session',
+        onCardCreated,
+      })
+    );
+
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    expect(onCardCreated).toHaveBeenCalledWith(
+      expect.objectContaining({ types: ['sql', 'python'] })
+    );
+  });
+
   it('clears editor after successful submit', async () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
     });
 
@@ -151,9 +175,8 @@ describe('useSubmitFlow', () => {
   it('resets store after successful submit', async () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [{ type: 'python', confidence: 0.05 }],
+        types: ['sql'],
+        alternatives: [['python']],
       });
     });
 
@@ -172,19 +195,17 @@ describe('useSubmitFlow', () => {
     });
 
     const state = useInputSurfaceStore.getState();
-    expect(state.classifiedType).toBeNull();
-    expect(state.confidence).toBeNull();
+    expect(state.classifiedTypes).toBeNull();
+    expect(state.alternatives).toBeNull();
     expect(state.isSubmitting).toBe(false);
   });
 
-  it('reads resolvedType from store (respects user override)', async () => {
+  it('reads resolvedTypes from store (respects user override)', async () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
-      useInputSurfaceStore.getState().setUserOverride('python');
+      useInputSurfaceStore.getState().setUserOverrideTypes(['python']);
     });
 
     const editorRef = { current: createMockEditor() as never };
@@ -203,16 +224,14 @@ describe('useSubmitFlow', () => {
     });
 
     expect(onCardCreated).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'python' })
+      expect.objectContaining({ types: ['python'] })
     );
   });
 
   it('prevents double submit via isSubmitting guard', async () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
       useInputSurfaceStore.getState().setIsSubmitting(true);
     });
@@ -257,9 +276,7 @@ describe('useSubmitFlow', () => {
   it('extracts mentions from nested JSON', async () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'note',
-        confidence: 0.85,
-        alternatives: [],
+        types: ['note'],
       });
     });
 

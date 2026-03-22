@@ -5,13 +5,14 @@ import { buildClassificationPrompt, buildApiPrompt } from './classificationPromp
 export type { ClassificationResult };
 
 /** Map from wire format (data_ingest) to store format (dataIngest) */
-function normalizeType(type: string): ClassificationResult['type'] | null {
-  const map: Record<string, ClassificationResult['type']> = {
+function normalizeType(type: string): string | null {
+  const map: Record<string, string> = {
     sql: 'sql',
     python: 'python',
     literature: 'literature',
     chat: 'chat',
     note: 'note',
+    task: 'task',
     data_ingest: 'dataIngest',
     dataIngest: 'dataIngest',
     dataingest: 'dataIngest',
@@ -19,33 +20,53 @@ function normalizeType(type: string): ClassificationResult['type'] | null {
   return map[type.toLowerCase()] ?? null;
 }
 
-/** Validate and parse a classification response */
+/** Validate and parse a classification response into pipeline arrays format */
 function parseClassificationResponse(raw: string): ClassificationResult | null {
   try {
     const parsed = JSON.parse(raw);
-    const type = normalizeType(parsed.type);
-    if (!type) return null;
 
-    const confidence = typeof parsed.confidence === 'number'
-      ? Math.max(0, Math.min(1, parsed.confidence))
-      : 0;
+    // Support both old wire format {type, confidence, alternatives} and new {types, alternatives}
+    let primaryType: string | null = null;
 
-    const alternatives = Array.isArray(parsed.alternatives)
-      ? parsed.alternatives
-          .map((alt: { type: string; confidence: number }) => {
-            const altType = normalizeType(alt.type);
-            if (!altType) return null;
-            return {
-              type: altType,
-              confidence: typeof alt.confidence === 'number'
-                ? Math.max(0, Math.min(1, alt.confidence))
-                : 0,
-            };
-          })
-          .filter(Boolean) as ClassificationResult['alternatives']
-      : [];
+    if (typeof parsed.type === 'string') {
+      primaryType = normalizeType(parsed.type);
+    } else if (Array.isArray(parsed.types) && parsed.types.length > 0) {
+      primaryType = normalizeType(parsed.types[0]);
+    }
 
-    return { type, confidence, alternatives };
+    if (!primaryType) return null;
+
+    // Build types array: always a pipeline starting with the primary type
+    const types: string[] = [primaryType];
+
+    // Parse alternatives as string[][] (each alternative is a pipeline)
+    let alternatives: string[][] | undefined;
+
+    if (Array.isArray(parsed.alternatives) && parsed.alternatives.length > 0) {
+      const parsedAlts: string[][] = [];
+
+      for (const alt of parsed.alternatives) {
+        if (Array.isArray(alt)) {
+          // Already an array pipeline
+          const normalizedPipeline = alt.map((t: string) => normalizeType(t)).filter((t): t is string => t !== null);
+          if (normalizedPipeline.length > 0) {
+            parsedAlts.push(normalizedPipeline);
+          }
+        } else if (typeof alt === 'object' && alt !== null && typeof alt.type === 'string') {
+          // Old wire format: {type, confidence}
+          const altType = normalizeType(alt.type);
+          if (altType) {
+            parsedAlts.push([altType]);
+          }
+        }
+      }
+
+      if (parsedAlts.length > 0) {
+        alternatives = parsedAlts;
+      }
+    }
+
+    return { types, alternatives };
   } catch {
     return null;
   }

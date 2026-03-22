@@ -8,7 +8,6 @@ import {
   dashedBorder,
   pulseAnimation,
   pillColorVariants,
-  lowConfidencePill,
   dropdownOverlay,
   dropdownItem,
   dropdownColorDot,
@@ -51,17 +50,22 @@ export interface ClassificationPreviewProps {
 }
 
 export function ClassificationPreview({ className }: ClassificationPreviewProps) {
-  const classifiedType = useInputSurfaceStore((s) => s.classifiedType);
-  const confidence = useInputSurfaceStore((s) => s.confidence);
+  const classifiedTypes = useInputSurfaceStore((s) => s.classifiedTypes);
   const alternatives = useInputSurfaceStore((s) => s.alternatives);
-  const userOverrideType = useInputSurfaceStore((s) => s.userOverrideType);
+  const userOverrideTypes = useInputSurfaceStore((s) => s.userOverrideTypes);
   const isClassifying = useInputSurfaceStore((s) => s.isClassifying);
-  const setUserOverride = useInputSurfaceStore((s) => s.setUserOverride);
+  const setUserOverrideTypes = useInputSurfaceStore((s) => s.setUserOverrideTypes);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const resolvedType = userOverrideType ?? classifiedType;
+  // Resolved pipeline: user override takes precedence
+  const resolvedTypes = userOverrideTypes ?? classifiedTypes;
+  // Primary type is the first element in the pipeline
+  const primaryType = resolvedTypes ? (resolvedTypes[0] as InputType) : null;
+  const isCompound = resolvedTypes !== null && resolvedTypes.length > 1;
+  const hasOverride = userOverrideTypes !== null;
+  const hasAlternatives = alternatives !== null && alternatives.length > 0;
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -92,89 +96,50 @@ export function ClassificationPreview({ className }: ClassificationPreviewProps)
 
   const handleSelectType = useCallback(
     (type: InputType) => {
-      setUserOverride(type);
+      setUserOverrideTypes([type]);
       setIsDropdownOpen(false);
     },
-    [setUserOverride]
+    [setUserOverrideTypes]
   );
 
-  // Sort types by confidence for dropdown ordering
-  const orderedTypes = getOrderedTypes(classifiedType, alternatives);
+  // Order types for dropdown: classified first, then alternatives' first elements, then rest
+  const orderedTypes = getOrderedTypes(classifiedTypes, alternatives);
 
   // No indicator if nothing classified
-  if (!resolvedType && !isClassifying) {
+  if (!primaryType && !isClassifying) {
     return null;
   }
-
-  // High confidence: >= 0.80
-  const isHigh = confidence !== null && confidence >= 0.80;
-  // Medium confidence: 0.50 - 0.79
-  const isMedium = confidence !== null && confidence >= 0.50 && confidence < 0.80;
-  // Low confidence: < 0.50
-  const isLow = confidence !== null && confidence < 0.50;
-
-  // If user overrode, always show solid
-  const hasOverride = userOverrideType !== null;
 
   const containerClasses = [previewContainer, className]
     .filter(Boolean)
     .join(' ');
 
-  // Low confidence: show multiple selectable pills
-  if (isLow && !hasOverride && resolvedType === null) {
-    const topTypes = orderedTypes.slice(0, 3);
+  // Still classifying, show pulse placeholder
+  if (!primaryType) {
     return (
-      <div
-        ref={containerRef}
-        className={containerClasses}
-        style={{ position: 'relative' }}
-      >
-        {topTypes.map((type) => (
-          <button
-            key={type}
-            type="button"
-            className={[
-              typePillBase,
-              pillColorVariants[type],
-              lowConfidencePill,
-              isClassifying ? pulseAnimation : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => handleSelectType(type)}
-            aria-label={`Select ${TYPE_LABELS[type]}`}
-          >
-            {TYPE_LABELS[type]}
-          </button>
-        ))}
+      <div ref={containerRef} className={containerClasses}>
+        <span
+          className={[typePillBase, pulseAnimation].join(' ')}
+          style={{
+            width: '60px',
+            backgroundColor: '#e0e0e0',
+            borderColor: '#d0d0d0',
+            borderStyle: 'solid',
+          }}
+        >
+          &nbsp;
+        </span>
       </div>
     );
   }
 
-  // Single pill display (high/medium confidence or user override)
-  if (!resolvedType) {
-    // Still classifying, show pulse placeholder
-    if (isClassifying) {
-      return (
-        <div ref={containerRef} className={containerClasses}>
-          <span
-            className={[typePillBase, pulseAnimation].join(' ')}
-            style={{
-              width: '60px',
-              backgroundColor: '#e0e0e0',
-              borderColor: '#d0d0d0',
-              borderStyle: 'solid',
-            }}
-          >
-            &nbsp;
-          </span>
-        </div>
-      );
-    }
-    return null;
-  }
+  // Use dashed border when there are alternatives and no override (uncertain classification)
+  const borderClass = hasOverride || !hasAlternatives ? solidBorder : dashedBorder;
 
-  const borderClass = hasOverride || isHigh ? solidBorder : isMedium ? dashedBorder : solidBorder;
+  // Build label: show compound indicator if pipeline has >1 type
+  const pillLabel = isCompound
+    ? resolvedTypes!.map((t) => TYPE_LABELS[t as InputType] ?? t).join(' → ')
+    : TYPE_LABELS[primaryType];
 
   return (
     <div
@@ -186,17 +151,17 @@ export function ClassificationPreview({ className }: ClassificationPreviewProps)
         type="button"
         className={[
           typePillBase,
-          pillColorVariants[resolvedType],
+          pillColorVariants[primaryType],
           borderClass,
           isClassifying ? pulseAnimation : '',
         ]
           .filter(Boolean)
           .join(' ')}
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        aria-label={`Type: ${TYPE_LABELS[resolvedType]}. Click to change.`}
+        aria-label={`Type: ${pillLabel}. Click to change.`}
         data-testid="type-indicator"
       >
-        {TYPE_LABELS[resolvedType]}
+        {pillLabel}
       </button>
 
       {isDropdownOpen && (
@@ -206,7 +171,7 @@ export function ClassificationPreview({ className }: ClassificationPreviewProps)
               key={type}
               className={dropdownItem}
               role="option"
-              aria-selected={type === resolvedType}
+              aria-selected={type === primaryType}
               onClick={() => handleSelectType(type)}
             >
               <span
@@ -222,40 +187,46 @@ export function ClassificationPreview({ className }: ClassificationPreviewProps)
   );
 }
 
-/** Order types by confidence, with alternatives first */
+/**
+ * Order types for dropdown: classified pipeline's first type first,
+ * then alternatives' first types, then remaining types.
+ */
 function getOrderedTypes(
-  classifiedType: InputType | null,
-  alternatives: Array<{ type: InputType; confidence: number }>
+  classifiedTypes: string[] | null,
+  alternatives: string[][] | null
 ): InputType[] {
-  if (!classifiedType && alternatives.length === 0) {
+  const primaryType = classifiedTypes ? (classifiedTypes[0] as InputType) : null;
+
+  if (!primaryType && (!alternatives || alternatives.length === 0)) {
     return ALL_TYPES;
   }
 
-  const ranked: Array<{ type: InputType; confidence: number }> = [];
+  const seen = new Set<InputType>();
+  const ranked: InputType[] = [];
 
-  if (classifiedType) {
-    ranked.push({
-      type: classifiedType,
-      confidence: 1, // Highest priority
-    });
+  if (primaryType) {
+    ranked.push(primaryType);
+    seen.add(primaryType);
   }
 
-  for (const alt of alternatives) {
-    if (alt.type !== classifiedType) {
-      ranked.push(alt);
+  if (alternatives) {
+    for (const alt of alternatives) {
+      if (alt.length > 0) {
+        const altType = alt[0] as InputType;
+        if (!seen.has(altType)) {
+          ranked.push(altType);
+          seen.add(altType);
+        }
+      }
     }
   }
 
-  // Add remaining types alphabetically
-  const seen = new Set(ranked.map((r) => r.type));
+  // Add remaining types in their canonical order
   for (const type of ALL_TYPES) {
     if (!seen.has(type)) {
-      ranked.push({ type, confidence: 0 });
+      ranked.push(type);
     }
   }
 
-  // Sort: ranked items first (by confidence desc), then alphabetical
-  ranked.sort((a, b) => b.confidence - a.confidence);
-
-  return ranked.map((r) => r.type);
+  return ranked;
 }

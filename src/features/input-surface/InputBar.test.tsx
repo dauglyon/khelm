@@ -104,9 +104,7 @@ describe('InputBar', () => {
     // Set classification after mount so the sessionId effect doesn't reset it
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'sql',
-        confidence: 0.92,
-        alternatives: [],
+        types: ['sql'],
       });
     });
 

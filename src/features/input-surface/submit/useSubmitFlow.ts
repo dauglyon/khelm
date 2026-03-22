@@ -1,10 +1,9 @@
 import { useCallback } from 'react';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { useInputSurfaceStore } from '../store/useInputSurfaceStore';
-import type { InputType } from '../store/useInputSurfaceStore';
 
 export interface CardCreationPayload {
-  type: InputType;
+  types: string[];
   content: JSONContent;
   mentions: Array<{ cardId: string; label: string }>;
   sessionId: string;
@@ -49,7 +48,7 @@ export function useSubmitFlow({
   onCardCreated,
   onError,
 }: UseSubmitFlowOptions) {
-  const resolvedType = useInputSurfaceStore((s) => s.resolvedType);
+  const resolvedTypes = useInputSurfaceStore((s) => s.resolvedTypes);
   const isSubmitting = useInputSurfaceStore((s) => s.isSubmitting);
   const setIsSubmitting = useInputSurfaceStore((s) => s.setIsSubmitting);
   const reset = useInputSurfaceStore((s) => s.reset);
@@ -64,9 +63,9 @@ export function useSubmitFlow({
     // Guard: already submitting
     if (useInputSurfaceStore.getState().isSubmitting) return;
 
-    // Resolve type
-    const type = useInputSurfaceStore.getState().resolvedType();
-    if (!type) {
+    // Resolve types pipeline
+    const types = useInputSurfaceStore.getState().resolvedTypes();
+    if (!types || types.length === 0) {
       // No type resolved - cannot submit
       onError?.(new Error('No input type selected. Please select a type before submitting.'));
       return;
@@ -78,7 +77,7 @@ export function useSubmitFlow({
 
     // Build payload
     const payload: CardCreationPayload = {
-      type,
+      types,
       content,
       mentions,
       sessionId,
@@ -98,7 +97,7 @@ export function useSubmitFlow({
       setIsSubmitting(false);
       onError?.(error instanceof Error ? error : new Error(String(error)));
     }
-  }, [editorRef, sessionId, onCardCreated, onError, setIsSubmitting, reset, resolvedType]);
+  }, [editorRef, sessionId, onCardCreated, onError, setIsSubmitting, reset, resolvedTypes]);
 
   return {
     submit,

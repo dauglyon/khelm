@@ -17,14 +17,14 @@ The input surface is the single entry point for all user intent in The Helm. It 
 
 | ID | Summary | Files | Deps | Status | Preflight |
 |----|---------|-------|------|--------|-----------|
-| 01 | Input surface Zustand store | 2 | design-system | planned | `vitest run src/features/input-surface/store` |
-| 02 | TipTap single-line editor | 3 | 01, design-system | planned | `vitest run src/features/input-surface/editor` |
-| 03 | Mention pill node view | 2 | 02, design-system | planned | `vitest run src/features/input-surface/mention` |
-| 04 | Suggestion dropdown | 3 | 03, design-system | planned | `vitest run src/features/input-surface/suggestion` |
-| 05 | Classification service | 3 | 01 | planned | `vitest run src/features/input-surface/classifier` |
-| 06 | Classification preview | 3 | 05, 02, design-system | planned | `vitest run src/features/input-surface/classification-preview` |
-| 07 | Submit flow | 2 | 02, 05, 06, app-shell | planned | `vitest run src/features/input-surface/submit` |
-| 08 | InputBar composition | 2 | 02, 04, 06, 07, app-shell | planned | `vitest run src/features/input-surface/InputBar` |
+| 01 | Input surface Zustand store | 2 | design-system | done | done |
+| 02 | TipTap single-line editor | 3 | 01, design-system | pending | done |
+| 03 | Mention pill node view | 2 | 02, design-system | pending | done |
+| 04 | Suggestion dropdown | 3 | 03, design-system | pending | done |
+| 05 | Classification service | 3 | 01 | pending | done |
+| 06 | Classification preview | 3 | 05, 02, design-system | pending | done |
+| 07 | Submit flow | 2 | 02, 05, 06, app-shell | pending | done |
+| 08 | InputBar composition | 2 | 02, 04, 06, 07, app-shell | pending | done |
 
 ## Critical Path DAG
 
