@@ -55,7 +55,7 @@ export const colorVariantStyles = styleVariants({
   },
   'solid-danger': {
     backgroundColor: vars.color.status.error,
-    color: '#ffffff',
+    color: vars.color.surface,
     borderColor: vars.color.status.error,
     ':hover': {
       opacity: 0.9,
