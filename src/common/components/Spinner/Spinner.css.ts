@@ -1,5 +1,5 @@
 import { style, styleVariants } from '@vanilla-extract/css';
-import { spinKeyframes } from '@/common/animations/keyframes.css';
+import { spinKeyframes } from '@/common/animations';
 
 export const spinnerBase = style({
   display: 'inline-block',

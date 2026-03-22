@@ -35,6 +35,7 @@ export const indicator = style({
 export const indicatorChecked = style({
   backgroundColor: vars.color.text,
   borderColor: vars.color.text,
+  color: vars.color.surface,
 });
 
 export const disabledStyle = style({

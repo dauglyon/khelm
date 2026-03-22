@@ -36,7 +36,7 @@ const CheckIcon = () => (
   >
     <path
       d="M20 6L9 17l-5-5"
-      stroke="white"
+      stroke="currentColor"
       strokeWidth={3}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -54,7 +54,7 @@ const MinusIcon = () => (
   >
     <path
       d="M5 12h14"
-      stroke="white"
+      stroke="currentColor"
       strokeWidth={3}
       strokeLinecap="round"
       strokeLinejoin="round"

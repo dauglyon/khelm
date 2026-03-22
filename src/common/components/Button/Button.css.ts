@@ -83,6 +83,7 @@ export const colorVariantStyles = styleVariants({
     color: vars.color.status.error,
     borderColor: vars.color.status.error,
     ':hover': {
+      // Pragmatic exception: no tint token exists for danger hover. Raw rgba derived from vars.color.status.error (#C53030).
       backgroundColor: 'rgba(197, 48, 48, 0.05)',
     },
   },
@@ -107,6 +108,7 @@ export const colorVariantStyles = styleVariants({
     color: vars.color.status.error,
     borderColor: 'transparent',
     ':hover': {
+      // Pragmatic exception: no tint token exists for danger hover. Raw rgba derived from vars.color.status.error (#C53030).
       backgroundColor: 'rgba(197, 48, 48, 0.05)',
     },
   },

@@ -1,7 +1,7 @@
 import { forwardRef, type ReactNode } from 'react';
 import { m, type HTMLMotionProps } from 'motion/react';
 import type { InputType } from '@/theme';
-import { cardEnterExit } from '@/common/animations/variants';
+import { cardEnterExit } from '@/common/animations';
 import {
   cardBase,
   selectedStyle,

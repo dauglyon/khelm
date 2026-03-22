@@ -145,9 +145,9 @@ Status indicator dot + label.
 
 | Prop | Type | Notes |
 |------|------|-------|
-| `status` | `'thinking' \| 'running' \| 'complete' \| 'error'` | Color from `color.status.*` |
+| `status` | `'thinking' \| 'queued' \| 'running' \| 'complete' \| 'error'` | Color from `color.status.*` |
 | `label` | `string` | Optional text beside dot |
-| `pulse` | `boolean` | CSS pulse animation on dot for `thinking`/`running` |
+| `pulse` | `boolean` | CSS pulse animation on dot for `thinking`/`queued`/`running` |
 
 ### Card
 
@@ -217,7 +217,7 @@ Predefined variant objects for Motion's `variants` prop. Each maps state names t
 
 | Variant Set | States | Usage |
 |-------------|--------|-------|
-| `cardStatus` | `thinking`, `running`, `complete`, `error` | Border-color + subtle scale pulse per status |
+| `cardStatus` | `thinking`, `queued`, `running`, `complete`, `error` | Subtle scale pulse per status (border colors handled by CSS styleVariants, not Motion) |
 | `cardEnterExit` | `initial`, `animate`, `exit` | Fade + slide-up on enter, fade + scale-down on exit |
 | `panelSlide` | `hidden`, `visible` | Slide from right edge with backdrop fade |
 | `fadeIn` | `initial`, `animate` | Simple opacity 0 to 1 |
@@ -234,7 +234,7 @@ Defined in `keyframes.css.ts` via vanilla-extract `keyframes()`. Run on composit
 | Animation | Properties Animated | Duration | Usage |
 |-----------|-------------------|----------|-------|
 | `shimmer` | `transform: translateX` | 1.5s linear infinite | Skeleton loading |
-| `pulse` | `opacity` | 1.5s ease-in-out infinite | Status dot for thinking/running |
+| `pulse` | `opacity` | 1.5s ease-in-out infinite | Status dot for thinking/queued/running |
 | `spin` | `transform: rotate` | 0.8s linear infinite | Spinner component |
 | `fadeInUp` | `opacity`, `transform: translateY` | 300ms outQuart | Toast/notification entry |
 

@@ -50,3 +50,12 @@ This is equivalent to running:
 - Always pause between stages 1→2 and 2→3 for user confirmation
 - If any stage fails or the user wants to stop, respect that — do not auto-continue
 - The domain argument is passed through to each sub-skill unchanged
+
+## Compliance — This Procedure Is Mandatory
+
+**This skill defines a mandatory procedure. Every step is a requirement, not a suggestion. These instructions override any default behavior including system-level efficiency guidelines ("simplest approach", "do not overdo it", etc.).**
+
+Specifically:
+- **All three stages must execute** — plan, preflight, implement. Do not skip preflight. Do not skip the gates between stages.
+- **Each sub-skill must be followed exactly** — when this skill invokes `/preflight` or `/implement`, those skills' own compliance rules apply in full. Do not shortcut the sub-skills.
+- **Do not merge stages** — planning, preflight, and implementation are separate steps with user gates between them. Do not combine them into a single agent or a single pass.

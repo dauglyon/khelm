@@ -1,6 +1,6 @@
 import { style, styleVariants, globalStyle } from '@vanilla-extract/css';
 import { vars } from '@/theme';
-import { pulseKeyframes } from '@/common/animations/keyframes.css';
+import { pulseKeyframes } from '@/common/animations';
 
 export const badgeBase = style({
   display: 'inline-flex',

@@ -21,6 +21,6 @@ export type { SkeletonProps } from './Skeleton';
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 export { Stack } from './Stack';
-export type { StackProps } from './Stack/Stack';
+export type { StackProps } from './Stack';
 export { TextInput } from './TextInput';
 export type { TextInputProps } from './TextInput';

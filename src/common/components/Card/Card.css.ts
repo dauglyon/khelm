@@ -15,6 +15,7 @@ export const cardBase = style({
 });
 
 export const selectedStyle = style({
+  // Pragmatic exception: no shadow token exists. Raw rgba(0,0,0,0.08) is a standard elevation value not derivable from theme tokens.
   boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
   borderColor: vars.color.textLight,
 });
@@ -46,5 +47,5 @@ export const accentColorVariants = styleVariants(
         backgroundColor: vars.color.inputType[type].border,
       },
     ])
-  ) satisfies Record<InputType, { backgroundColor: string }>
-);
+  ) as Record<string, { backgroundColor: string }>
+) as Record<InputType, string>;

@@ -5,13 +5,11 @@ import {
   sizeVariants,
   colorVariantStyles,
   disabledStyle,
-} from '@/common/components/Button/Button.css';
-import {
   type ButtonVariant,
   type ButtonSize,
   type ButtonColor,
   spinnerSizeMap,
-} from '@/common/components/Button/Button';
+} from '@/common/components/Button';
 import { squareSizeVariants } from './IconButton.css';
 
 export interface IconButtonProps

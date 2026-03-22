@@ -66,4 +66,8 @@ export const closeButton = style({
   ':hover': {
     opacity: 0.7,
   },
+  ':focus-visible': {
+    outline: `2px solid ${vars.color.text}`,
+    outlineOffset: '2px',
+  },
 });
