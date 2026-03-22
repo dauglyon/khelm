@@ -38,12 +38,21 @@ describe('sprinkles', () => {
     });
 
     it('accepts status color token keys', () => {
-      const statusColors = ['statusThinking', 'statusRunning', 'statusComplete', 'statusError'] as const;
+      const statusColors = ['statusThinking', 'statusQueued', 'statusRunning', 'statusComplete', 'statusError'] as const;
       for (const c of statusColors) {
         const result = sprinkles({ color: c });
         expect(typeof result).toBe('string');
         expect(result.length).toBeGreaterThan(0);
       }
+    });
+
+    it('produces distinct class names for different color values', () => {
+      const a = sprinkles({ color: 'text' });
+      const b = sprinkles({ color: 'textMid' });
+      const c = sprinkles({ color: 'bg' });
+      expect(a).not.toBe(b);
+      expect(b).not.toBe(c);
+      expect(a).not.toBe(c);
     });
   });
 
@@ -68,6 +77,12 @@ describe('sprinkles', () => {
       const result = sprinkles({ gap: 8 });
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('produces distinct class names for different padding values', () => {
+      expect(sprinkles({ padding: 4 })).not.toBe(sprinkles({ padding: 8 }));
+      expect(sprinkles({ padding: 8 })).not.toBe(sprinkles({ padding: 16 }));
+      expect(sprinkles({ padding: 0 })).not.toBe(sprinkles({ padding: 64 }));
     });
 
     it('accepts individual padding properties', () => {
@@ -163,6 +178,56 @@ describe('sprinkles', () => {
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
     });
+
+    it('accepts all display values', () => {
+      const displayValues = ['none', 'block', 'inline', 'inline-block', 'flex', 'inline-flex', 'grid'] as const;
+      for (const v of displayValues) {
+        const result = sprinkles({ display: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all flexDirection values', () => {
+      const values = ['row', 'row-reverse', 'column', 'column-reverse'] as const;
+      for (const v of values) {
+        const result = sprinkles({ flexDirection: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all alignItems values', () => {
+      const values = ['stretch', 'flex-start', 'center', 'flex-end', 'baseline'] as const;
+      for (const v of values) {
+        const result = sprinkles({ alignItems: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all justifyContent values', () => {
+      const values = ['flex-start', 'center', 'flex-end', 'space-between', 'space-around', 'space-evenly'] as const;
+      for (const v of values) {
+        const result = sprinkles({ justifyContent: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all flexWrap values', () => {
+      const values = ['nowrap', 'wrap', 'wrap-reverse'] as const;
+      for (const v of values) {
+        const result = sprinkles({ flexWrap: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('produces distinct class names for different display values', () => {
+      expect(sprinkles({ display: 'flex' })).not.toBe(sprinkles({ display: 'block' }));
+      expect(sprinkles({ display: 'none' })).not.toBe(sprinkles({ display: 'grid' }));
+    });
   });
 
   // Sizing properties
@@ -189,6 +254,52 @@ describe('sprinkles', () => {
       const result = sprinkles({ minHeight: 'auto' });
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('accepts all width values', () => {
+      const values = ['auto', '100%', '75%', '50%', '33.333%', '25%'] as const;
+      for (const v of values) {
+        const result = sprinkles({ width: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all height values', () => {
+      const values = ['auto', '100%', '75%', '50%', '25%'] as const;
+      for (const v of values) {
+        const result = sprinkles({ height: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all maxWidth values', () => {
+      const values = ['100%', '75%', '50%', '25%', 'none', '640px', '768px', '1024px', '1280px'] as const;
+      for (const v of values) {
+        const result = sprinkles({ maxWidth: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('accepts all minHeight values', () => {
+      const values = ['auto', 0, '100%', '100vh'] as const;
+      for (const v of values) {
+        const result = sprinkles({ minHeight: v });
+        expect(typeof result).toBe('string');
+        expect(result.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('produces distinct class names for different width values', () => {
+      expect(sprinkles({ width: '100%' })).not.toBe(sprinkles({ width: '50%' }));
+      expect(sprinkles({ width: '25%' })).not.toBe(sprinkles({ width: '75%' }));
+    });
+
+    it('produces distinct class names for different maxWidth values', () => {
+      expect(sprinkles({ maxWidth: '640px' })).not.toBe(sprinkles({ maxWidth: '1280px' }));
+      expect(sprinkles({ maxWidth: '100%' })).not.toBe(sprinkles({ maxWidth: 'none' }));
     });
   });
 

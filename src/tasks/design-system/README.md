@@ -33,7 +33,7 @@ The design-system domain provides the visual foundation for The Helm: a vanilla-
 | ID | Summary | Deps | Status | Preflight |
 |----|---------|------|--------|-----------|
 | 01 | Theme contract and values | none | done | done |
-| 02 | Sprinkles utility API | 01 | pending | done |
+| 02 | Sprinkles utility API | 01 | done | done |
 | 03 | Typography scale and font-face | 01 | pending | done |
 | 04 | Theme barrel export | 01, 02, 03 | pending | done |
 | 05 | Easing constants | 01 | pending | done |

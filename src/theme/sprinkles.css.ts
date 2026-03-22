@@ -1,7 +1,7 @@
 import { defineProperties, createSprinkles } from '@vanilla-extract/sprinkles';
 import { vars } from './contract.css';
 
-// Curated color subset: base 6 + status 4
+// Curated color subset: base 6 + status 5
 // InputType colors are intentionally excluded (use styleVariants instead)
 const colorValues = {
   bg: vars.color.bg,
@@ -11,6 +11,7 @@ const colorValues = {
   textMid: vars.color.textMid,
   textLight: vars.color.textLight,
   statusThinking: vars.color.status.thinking,
+  statusQueued: vars.color.status.queued,
   statusRunning: vars.color.status.running,
   statusComplete: vars.color.status.complete,
   statusError: vars.color.status.error,
@@ -108,6 +109,7 @@ const sizingProperties = defineProperties({
     width: {
       auto: 'auto',
       '100%': '100%',
+      '75%': '75%',
       '50%': '50%',
       '33.333%': '33.333%',
       '25%': '25%',
@@ -115,16 +117,26 @@ const sizingProperties = defineProperties({
     height: {
       auto: 'auto',
       '100%': '100%',
+      '75%': '75%',
       '50%': '50%',
+      '25%': '25%',
     },
     maxWidth: {
       '100%': '100%',
+      '75%': '75%',
+      '50%': '50%',
+      '25%': '25%',
       none: 'none',
+      '640px': '640px',
+      '768px': '768px',
+      '1024px': '1024px',
+      '1280px': '1280px',
     },
     minHeight: {
       auto: 'auto',
       0: '0px',
       '100%': '100%',
+      '100vh': '100vh',
     },
   },
 });
