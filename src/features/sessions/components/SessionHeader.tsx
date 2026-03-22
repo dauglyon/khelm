@@ -129,7 +129,7 @@ export function SessionHeader({ session }: SessionHeaderProps) {
       </div>
 
       {showDeleteConfirm && (
-        <div className={confirmOverlay}>
+        <div className={confirmOverlay} aria-modal="true">
           <div className={confirmDialog} role="alertdialog" aria-label="Confirm delete">
             <div className={confirmTitle}>Delete Session</div>
             <div className={confirmText}>

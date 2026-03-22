@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:real": "VITE_ENABLE_MOCKS=false vite",
+    "prebuild": "orval",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "pretest": "orval",
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:api": "orval",

@@ -1,8 +1,9 @@
 import { NewSessionDialog } from '../components/NewSessionDialog';
+import { pageContainer } from './NewSessionPage.css';
 
 export function NewSessionPage() {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '80px' }}>
+    <div className={pageContainer}>
       <NewSessionDialog />
     </div>
   );

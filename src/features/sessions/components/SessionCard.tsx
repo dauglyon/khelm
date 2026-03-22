@@ -16,7 +16,7 @@ export function SessionCard({ session }: SessionCardProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === 'Enter') {
       e.preventDefault();
       navigate(`/session/${session.id}`);
     }

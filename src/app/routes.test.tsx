@@ -1,15 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/common/stores/authStore';
 import { routeConfig } from './routes';
+import { createTestQueryClient } from '@/test';
 
 function renderWithRouter(initialEntries: string[]) {
   const router = createMemoryRouter(routeConfig, { initialEntries });
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+  const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

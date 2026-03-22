@@ -1,4 +1,4 @@
-import { Button } from '@/common/components';
+import { IconButton, Icon } from '@/common/components';
 import { toolbarContainer, inputPlaceholder } from './Toolbar.css';
 
 interface ToolbarProps {
@@ -10,15 +10,14 @@ export function Toolbar({ onToggleSidebar, sidebarOpen }: ToolbarProps) {
   return (
     <div className={toolbarContainer} data-testid="toolbar">
       <span className={inputPlaceholder}>Input surface placeholder</span>
-      <Button
+      <IconButton
+        icon={<Icon name="menu" size={20} />}
         variant="ghost"
         color="neutral"
         size="sm"
         onClick={onToggleSidebar}
         aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-      >
-        {sidebarOpen ? 'Hide Panel' : 'Show Panel'}
-      </Button>
+      />
     </div>
   );
 }

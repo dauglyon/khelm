@@ -16,12 +16,6 @@ export const logoText = style({
   color: vars.color.text,
 });
 
-export const titleText = style({
-  fontSize: '16px',
-  fontWeight: 500,
-  color: vars.color.text,
-});
-
 export const avatarPlaceholder = style({
   width: '32px',
   height: '32px',

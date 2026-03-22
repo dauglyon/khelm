@@ -1,3 +1,6 @@
+import { getApiBaseUrl } from '@/common/utils/env';
+import { useAuthStore } from '@/common/stores/authStore';
+
 /**
  * Custom fetch wrapper for Orval-generated hooks.
  * Orval passes (url, init) -- same signature as native fetch.
@@ -7,7 +10,12 @@ export const customFetch = async <T>(
   url: string,
   init?: RequestInit
 ): Promise<T> => {
-  const response = await fetch(url, init);
+  const token = useAuthStore.getState().token;
+  const headers: HeadersInit = {
+    ...(init?.headers as Record<string, string>),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  const response = await fetch(getApiBaseUrl() + url, { ...init, headers });
 
   // Handle 204 No Content
   if (response.status === 204) {

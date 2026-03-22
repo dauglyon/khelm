@@ -1,10 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/mocks/server';
 import { RequireSession } from './RequireSession';
+import { createTestQueryClient } from '@/test';
 
 function renderGuard(initialPath: string) {
   const router = createMemoryRouter(
@@ -21,9 +22,7 @@ function renderGuard(initialPath: string) {
     ],
     { initialEntries: [initialPath] }
   );
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+  const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

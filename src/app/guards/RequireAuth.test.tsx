@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/common/stores/authStore';
 import { RequireAuth } from './RequireAuth';
+import { createTestQueryClient } from '@/test';
 
 function LoginPageWithState() {
   const location = useLocation();
@@ -30,9 +31,7 @@ function renderGuard(initialPath: string) {
     ],
     { initialEntries: [initialPath] }
   );
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+  const queryClient = createTestQueryClient();
   return render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

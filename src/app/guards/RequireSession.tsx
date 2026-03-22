@@ -1,6 +1,7 @@
 import { Outlet, useParams } from 'react-router';
 import { useSession } from '@/features/sessions/hooks/useSession';
 import { Spinner } from '@/common/components';
+import { loadingContainer } from './RequireSession.css';
 
 /**
  * Route guard: validates that the :id param refers to a valid session.
@@ -26,7 +27,7 @@ function RequireSessionInner({ id }: { id: string }) {
 
   if (isLoading) {
     return (
-      <div data-testid="session-loading" style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+      <div data-testid="session-loading" className={loadingContainer}>
         <Spinner size={24} />
       </div>
     );

@@ -11,6 +11,8 @@ import {
   errorText,
 } from './NewSessionDialog.css';
 
+const SESSION_TITLE_INPUT_ID = 'new-session-title-input';
+
 export function NewSessionDialog() {
   const [title, setTitle] = useState('');
   const { createSession, isCreating, error } = useCreateSessionMutation();
@@ -44,13 +46,13 @@ export function NewSessionDialog() {
       <h2 className={dialogTitle}>New Session</h2>
       <form className={form} onSubmit={handleSubmit}>
         <div>
-          <div className={label}>Session Title</div>
+          <label className={label} htmlFor={SESSION_TITLE_INPUT_ID}>Session title</label>
           <TextInput
             ref={inputRef}
+            id={SESSION_TITLE_INPUT_ID}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter session title..."
-            aria-label="Session title"
             error={!!error}
           />
         </div>

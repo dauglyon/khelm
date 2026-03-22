@@ -26,6 +26,15 @@ export default defineConfig({
 
   server: {
     port: 5173,
+    proxy: {
+      '/api': {
+        // Hardcode the dev backend URL here. .env files configure the
+        // CLIENT-SIDE base URL (VITE_API_BASE_URL), not the proxy target.
+        // process.env does not load .env files in vite.config.ts context.
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
   },
 
   test: {
