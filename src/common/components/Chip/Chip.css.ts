@@ -34,6 +34,7 @@ const inputTypes: InputType[] = [
   'hypothesis',
   'note',
   'dataIngest',
+  'task',
 ];
 
 export const chipColorVariants = styleVariants(

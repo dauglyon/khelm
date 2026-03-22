@@ -62,6 +62,7 @@ describe('Chip', () => {
       'hypothesis',
       'note',
       'dataIngest',
+      'task',
     ] as const;
     for (const type of types) {
       const { unmount } = render(<Chip inputType={type} label={type} />);
