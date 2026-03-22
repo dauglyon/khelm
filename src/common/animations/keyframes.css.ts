@@ -25,7 +25,8 @@ export const shimmer = style({
   animation: `${shimmerKeyframes} 1.5s linear infinite`,
   '@media': {
     '(prefers-reduced-motion: reduce)': {
-      animation: 'none',
+      animationDuration: '0.01ms',
+      animationIterationCount: '1',
     },
   },
 });
@@ -34,7 +35,8 @@ export const pulse = style({
   animation: `${pulseKeyframes} 1.5s ease-in-out infinite`,
   '@media': {
     '(prefers-reduced-motion: reduce)': {
-      animation: 'none',
+      animationDuration: '0.01ms',
+      animationIterationCount: '1',
     },
   },
 });
@@ -43,7 +45,8 @@ export const spin = style({
   animation: `${spinKeyframes} 0.8s linear infinite`,
   '@media': {
     '(prefers-reduced-motion: reduce)': {
-      animation: 'none',
+      animationDuration: '0.01ms',
+      animationIterationCount: '1',
     },
   },
 });
@@ -52,7 +55,17 @@ export const fadeInUp = style({
   animation: `${fadeInUpKeyframes} 300ms ${easingCSS.outQuart} forwards`,
   '@media': {
     '(prefers-reduced-motion: reduce)': {
-      animation: 'none',
+      animationDuration: '0.01ms',
+      animationIterationCount: '1',
+    },
+  },
+});
+
+export const reducedMotion = style({
+  '@media': {
+    '(prefers-reduced-motion: reduce)': {
+      animationDuration: '0.01ms !important',
+      animationIterationCount: '1 !important',
     },
   },
 });

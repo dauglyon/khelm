@@ -8,6 +8,7 @@ import {
   pulse,
   spin,
   fadeInUp,
+  reducedMotion,
 } from './keyframes.css';
 
 describe('keyframe names', () => {
@@ -51,6 +52,11 @@ describe('style classes', () => {
   it('fadeInUp is a non-empty string (CSS class)', () => {
     expect(typeof fadeInUp).toBe('string');
     expect(fadeInUp.length).toBeGreaterThan(0);
+  });
+
+  it('reducedMotion is a non-empty string (CSS class)', () => {
+    expect(typeof reducedMotion).toBe('string');
+    expect(reducedMotion.length).toBeGreaterThan(0);
   });
 });
 
