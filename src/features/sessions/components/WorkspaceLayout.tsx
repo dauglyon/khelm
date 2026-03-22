@@ -6,7 +6,6 @@ import { MainWorkspace } from './MainWorkspace';
 import { Sidebar } from './Sidebar';
 import { useLayoutStore } from '@/common/stores/layoutStore';
 import { useMediaQuery } from '@/common/hooks/useMediaQuery';
-import { LazyMotionProvider } from '@/common/animations/LazyMotionProvider';
 
 interface WorkspaceLayoutProps {
   children?: ReactNode;
@@ -29,19 +28,17 @@ export function WorkspaceLayout({
   }, [isNarrow, setSidebarOpen]);
 
   return (
-    <LazyMotionProvider>
-      <div className={shell}>
-        <div className={headerStyle}>
-          <Header sessionHeader={sessionHeader} />
-        </div>
-        <div className={toolbarStyle}>
-          <Toolbar onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
-        </div>
-        <div className={content}>
-          <MainWorkspace>{children}</MainWorkspace>
-          <Sidebar open={sidebarOpen} />
-        </div>
+    <div className={shell}>
+      <div className={headerStyle}>
+        <Header sessionHeader={sessionHeader} />
       </div>
-    </LazyMotionProvider>
+      <div className={toolbarStyle}>
+        <Toolbar onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
+      </div>
+      <div className={content}>
+        <MainWorkspace>{children}</MainWorkspace>
+        <Sidebar open={sidebarOpen} />
+      </div>
+    </div>
   );
 }

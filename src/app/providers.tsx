@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { themeClass } from '@/theme';
+import { LazyMotionProvider } from '@/common/animations';
 
 /**
  * Shared QueryClient instance.
@@ -33,6 +34,7 @@ function ThemeProvider({ children }: { children: ReactNode }) {
  * Composes app-level providers in the correct order (outermost first):
  * 1. ThemeProvider
  * 2. QueryClientProvider
+ * 3. LazyMotionProvider
  *
  * RouterProvider is rendered separately since it manages its own tree.
  */
@@ -40,7 +42,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <LazyMotionProvider>
+          {children}
+        </LazyMotionProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

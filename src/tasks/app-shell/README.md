@@ -18,7 +18,7 @@ The app-shell domain delivers the top-level application skeleton: Vite 8 project
 | ID | Summary | Deps | Status | Preflight |
 |----|---------|------|--------|-----------|
 | 01 | Vite 8 project scaffold + config | design-system | done | done |
-| 02 | Environment config + provider composition | 01 | pending | done |
+| 02 | Environment config + provider composition | 01 | done | done |
 | 03 | React Router v7 route definitions + page stubs | 02 | pending | done |
 | 04 | RequireAuth + RequireSession route guards | 03 | pending | done |
 | 05 | Layout skeleton -- header, toolbar, main regions | 03 | pending | done |
