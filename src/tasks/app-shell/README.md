@@ -25,7 +25,7 @@ The app-shell domain delivers the top-level application skeleton: Vite 8 project
 | 06 | Layout skeleton -- collapsible sidebar | 05 | done | done |
 | 07 | OpenAPI spec authoring (sessions API) | (none) | done | done |
 | 08 | Orval config + code generation pipeline | 07, 01 | done | done |
-| 09 | MSW browser + node worker setup | 08 | pending | done |
+| 09 | MSW browser + node worker setup | 08 | done | done |
 | 10 | Session Zustand store + TanStack Query hooks | 08, 02 | pending | done |
 | 11 | SessionList + SessionCard UI | 10, 05 | pending | done |
 | 12 | NewSessionDialog + create flow | 10, 05 | pending | done |
