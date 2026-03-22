@@ -5,7 +5,7 @@ import { pulseKeyframes } from '@/common/animations';
 export const badgeBase = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '6px',
+  gap: '6px', // Component-internal spacing, not in token scale
 });
 
 export const dot = style({

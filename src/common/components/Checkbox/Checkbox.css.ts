@@ -28,7 +28,7 @@ export const indicator = style({
   alignItems: 'center',
   justifyContent: 'center',
   flexShrink: 0,
-  transition: 'background-color 150ms, border-color 150ms',
+  transition: 'background-color 150ms, border-color 150ms', // Shared transition duration, not yet a token
   backgroundColor: vars.color.surface,
 });
 

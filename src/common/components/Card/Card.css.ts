@@ -9,7 +9,7 @@ export const cardBase = style({
   padding: '16px',
   position: 'relative',
   overflow: 'hidden',
-  transition: 'box-shadow 150ms, border-color 150ms',
+  transition: 'box-shadow 150ms, border-color 150ms', // Shared transition duration, not yet a token
   // Reserve space for accent bar
   paddingTop: '19px',
 });

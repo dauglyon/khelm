@@ -5,13 +5,13 @@ export const buttonBase = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '6px',
+  gap: '6px', // Component-internal spacing, not in token scale
   borderRadius: '6px',
   border: '1px solid transparent',
   cursor: 'pointer',
   textDecoration: 'none',
   fontFamily: vars.font.sans,
-  transition: 'background-color 150ms, border-color 150ms, box-shadow 150ms',
+  transition: 'background-color 150ms, border-color 150ms, box-shadow 150ms', // Shared transition duration, not yet a token
   outline: 'none',
   ':focus-visible': {
     outline: `2px solid ${vars.color.text}`,
@@ -19,6 +19,7 @@ export const buttonBase = style({
   },
 });
 
+// Size-specific padding values, not in spacing token scale
 export const sizeVariants = styleVariants({
   sm: {
     height: '28px',

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { LazyMotionProvider } from '@/common/animations/LazyMotionProvider';
+import { LazyMotionProvider } from '@/common/animations';
 import { Card } from './Card';
 
 // Helper to wrap Card in LazyMotionProvider (required for m.div)

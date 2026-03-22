@@ -7,8 +7,8 @@ export const inputWrapper = style({
   alignItems: 'center',
   backgroundColor: vars.color.surface,
   border: `1px solid ${vars.color.border}`,
-  borderRadius: '6px',
-  transition: 'border-color 150ms, outline 150ms',
+  borderRadius: '6px', // Component-internal spacing, not in token scale
+  transition: 'border-color 150ms, outline 150ms', // Shared transition duration, not yet a token
   outline: 'none',
 });
 
