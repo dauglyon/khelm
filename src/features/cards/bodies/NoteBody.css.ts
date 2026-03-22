@@ -3,6 +3,7 @@ import { vars } from '@/theme';
 
 export const noteContainer = style({
   padding: '0 16px 16px',
+  minHeight: '60px',
 });
 
 export const noteTextarea = style({
@@ -27,4 +28,27 @@ export const noteTextarea = style({
     outlineOffset: '2px',
     borderRadius: '2px',
   },
+});
+
+export const noteReadOnly = style({
+  fontFamily: vars.font.sans,
+  fontSize: '15px',
+  fontWeight: 400,
+  lineHeight: 1.5,
+  color: vars.color.textMid,
+  margin: 0,
+  padding: 0,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+});
+
+export const noteEmpty = style({
+  fontFamily: vars.font.sans,
+  fontSize: '15px',
+  fontWeight: 400,
+  lineHeight: 1.5,
+  color: vars.color.textLight,
+  fontStyle: 'italic',
+  margin: 0,
+  padding: 0,
 });
