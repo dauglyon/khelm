@@ -86,6 +86,17 @@ describe('Card', () => {
     expect(cardEl.getAttribute('role')).toBeNull();
   });
 
+  it('renders no accent bar when inputType is omitted', () => {
+    renderCard(
+      <Card data-testid="card">
+        <span>No accent</span>
+      </Card>
+    );
+    const cardEl = screen.getByTestId('card');
+    // No accent bar child div should be rendered
+    expect(cardEl.querySelector('div')).toBeNull();
+  });
+
   it('renders all input types', () => {
     const types = [
       'sql',

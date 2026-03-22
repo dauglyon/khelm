@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router';
 import type { Session } from '@/generated/api/sessions.schemas';
 import { formatRelativeTime } from '@/common/utils/formatDate';
-import { card, cardTitle, cardMeta, memberCount } from './SessionCard.css';
+import { Card } from '@/common/components';
+import { cardTitle, cardMeta, memberCount, cardLink } from './SessionCard.css';
 
 interface SessionCardProps {
   session: Session;
@@ -22,14 +23,14 @@ export function SessionCard({ session }: SessionCardProps) {
   };
 
   return (
-    <div
-      className={card}
+    <Card
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role="link"
       tabIndex={0}
       data-testid="session-card"
       aria-label={`Open session: ${session.title}`}
+      className={cardLink}
     >
       <div className={cardTitle}>{session.title}</div>
       <div className={cardMeta}>
@@ -38,6 +39,6 @@ export function SessionCard({ session }: SessionCardProps) {
           {session.memberIds.length} {session.memberIds.length === 1 ? 'member' : 'members'}
         </span>
       </div>
-    </div>
+    </Card>
   );
 }

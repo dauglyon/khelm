@@ -44,3 +44,7 @@ export const skeletonGrid = style({
   gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
   gap: '16px',
 });
+
+export const createButtonWrapper = style({
+  marginTop: '16px',
+});

@@ -10,6 +10,7 @@ import {
   emptyState,
   emptyTitle,
   skeletonGrid,
+  createButtonWrapper,
 } from './SessionList.css';
 
 export function SessionList() {
@@ -56,7 +57,7 @@ export function SessionList() {
         <div className={emptyState}>
           <div className={emptyTitle}>No sessions yet</div>
           <p>Create your first session to get started.</p>
-          <div style={{ marginTop: '16px' }}>
+          <div className={createButtonWrapper}>
             <Button onClick={handleCreateSession}>Create Session</Button>
           </div>
         </div>
