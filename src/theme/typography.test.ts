@@ -78,4 +78,40 @@ describe('typography record', () => {
       expect(typography[key].length).toBeGreaterThan(0);
     }
   });
+
+  it('all 8 class names in the typography record are distinct', () => {
+    const values = allKeys.map((key) => typography[key]);
+    const unique = new Set(values);
+    expect(unique.size).toBe(8);
+  });
+});
+
+describe('typography recipe distinctness', () => {
+  it('displayLg and displaySm produce different class names', () => {
+    expect(displayLg).not.toBe(displaySm);
+  });
+
+  it('displayLg and body produce different class names', () => {
+    expect(displayLg).not.toBe(body);
+  });
+
+  it('body and bodySm produce different class names', () => {
+    expect(body).not.toBe(bodySm);
+  });
+
+  it('body and caption produce different class names', () => {
+    expect(body).not.toBe(caption);
+  });
+
+  it('mono and monoSm produce different class names', () => {
+    expect(mono).not.toBe(monoSm);
+  });
+
+  it('body and mono produce different class names', () => {
+    expect(body).not.toBe(mono);
+  });
+
+  it('heading and caption produce different class names', () => {
+    expect(heading).not.toBe(caption);
+  });
 });
