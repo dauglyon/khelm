@@ -192,7 +192,8 @@ If opus returns **APPROVE**, mark the task done and proceed to Step 3.
 After opus approves:
 
 1. Update `src/tasks/$ARGUMENTS/README.md`: change the task's status from `pending` to `done`.
-2. Commit the implementation with a message like: `impl($ARGUMENTS): task NN — {summary}`.
+2. **Documentation check**: If the task changed a component's public API (added/removed/changed props, renamed exports), changed architecture-level patterns (provider composition, shared styles, token structure), or introduced a new cross-cutting convention — run `/documentation` to update the affected architecture docs. Skip this for tasks that only add tests, fix values, or make internal changes with no API surface impact. **When updating docs, preserve user intent and decisions** — architecture docs may contain deliberate choices made during design discussions. Only update factual descriptions of what exists (prop types, file paths, component APIs), never overwrite rationale, design decisions, or user-confirmed patterns.
+3. Commit the implementation with a message like: `impl($ARGUMENTS): task NN — {summary}`.
 
 ### Step 4: Next Task
 

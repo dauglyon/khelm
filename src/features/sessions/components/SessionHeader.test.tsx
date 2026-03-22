@@ -1,8 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/mocks/server';
 import { SessionHeader } from './SessionHeader';
 import type { Session } from '@/generated/api/sessions.schemas';
 
@@ -65,6 +67,39 @@ describe('SessionHeader', () => {
     expect(screen.getByTestId('session-title')).toHaveTextContent('Test Session');
   });
 
+  it('pressing Enter commits the edit and calls the update mutation', async () => {
+    const patchSpy = vi.fn();
+    server.use(
+      http.patch('*/sessions/:id', async (info) => {
+        const body = await info.request.json();
+        patchSpy(body);
+        return HttpResponse.json(
+          { ...mockSession, title: (body as { title?: string }).title ?? mockSession.title },
+          { status: 200 }
+        );
+      })
+    );
+
+    renderSessionHeader();
+
+    // Enter edit mode
+    await userEvent.click(screen.getByTestId('session-title'));
+    const input = screen.getByLabelText('Edit session title');
+
+    // Clear and type a new title
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Updated Title');
+    await userEvent.keyboard('{Enter}');
+
+    // Should exit edit mode (input gone, title display back)
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Edit session title')).not.toBeInTheDocument();
+    });
+
+    // Verify the update mutation was called with the new title
+    expect(patchSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'Updated Title' }));
+  });
+
   it('member avatars render', () => {
     renderSessionHeader();
     expect(screen.getByTestId('member-avatars')).toBeInTheDocument();
@@ -78,18 +113,17 @@ describe('SessionHeader', () => {
 
   it('delete action shows confirmation dialog', async () => {
     renderSessionHeader();
-    const deleteBtn = screen.getByText('Delete');
+    const deleteBtn = screen.getByLabelText('Delete session');
     await userEvent.click(deleteBtn);
     expect(screen.getByText('Are you sure you want to delete this session? This action cannot be undone.')).toBeInTheDocument();
   });
 
   it('delete confirmation navigates to home on confirm', async () => {
     renderSessionHeader();
-    await userEvent.click(screen.getByText('Delete'));
+    await userEvent.click(screen.getByLabelText('Delete session'));
 
     // Click the confirm Delete button in the dialog
-    const deleteButtons = screen.getAllByText('Delete');
-    const confirmDeleteBtn = deleteButtons[deleteButtons.length - 1];
+    const confirmDeleteBtn = screen.getByText('Delete');
     await userEvent.click(confirmDeleteBtn);
 
     await waitFor(() => {

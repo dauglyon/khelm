@@ -23,22 +23,6 @@ export const titleDisplay = style({
   },
 });
 
-export const titleInput = style({
-  fontSize: '16px',
-  fontWeight: 500,
-  color: vars.color.text,
-  padding: '4px 8px',
-  borderRadius: '4px',
-  border: `1px solid ${vars.color.border}`,
-  backgroundColor: vars.color.surface,
-  fontFamily: vars.font.sans,
-  outline: 'none',
-  width: '200px',
-  ':focus': {
-    borderColor: vars.color.textMid,
-  },
-});
-
 export const savingIndicator = style({
   fontSize: '12px',
   color: vars.color.textLight,

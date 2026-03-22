@@ -4,11 +4,10 @@ import type { Session } from '@/generated/api/sessions.schemas';
 import { useUpdateSessionMutation } from '../hooks/useUpdateSession';
 import { useDeleteSessionMutation } from '../hooks/useDeleteSession';
 import { MemberAvatars } from './MemberAvatars';
-import { Button } from '@/common/components';
+import { Button, IconButton, Icon, TextInput } from '@/common/components';
 import {
   headerContent,
   titleDisplay,
-  titleInput,
   savingIndicator,
   actionsMenu,
   confirmOverlay,
@@ -82,9 +81,9 @@ export function SessionHeader({ session }: SessionHeaderProps) {
     <>
       <div className={headerContent} data-testid="session-header">
         {isEditing ? (
-          <input
+          <TextInput
             ref={inputRef}
-            className={titleInput}
+            size="sm"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={commitEdit}
@@ -108,24 +107,24 @@ export function SessionHeader({ session }: SessionHeaderProps) {
         {isUpdating && <span className={savingIndicator}>Saving...</span>}
         <MemberAvatars memberIds={session.memberIds} />
         <div className={actionsMenu}>
-          <Button
+          <IconButton
+            icon={<Icon name="archive" size={16} />}
+            aria-label="Archive session"
             variant="ghost"
             color="neutral"
             size="sm"
             onClick={handleArchive}
             disabled={isUpdating}
-          >
-            Archive
-          </Button>
-          <Button
+          />
+          <IconButton
+            icon={<Icon name="trash" size={16} />}
+            aria-label="Delete session"
             variant="ghost"
             color="danger"
             size="sm"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isDeleting}
-          >
-            Delete
-          </Button>
+          />
         </div>
       </div>
 

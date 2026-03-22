@@ -1,3 +1,4 @@
+import { vars } from '@/theme';
 import { avatarGroup, avatar, overflowBadge } from './MemberAvatars.css';
 
 interface MemberAvatarsProps {
@@ -5,19 +6,26 @@ interface MemberAvatarsProps {
   maxDisplay?: number;
 }
 
+const INPUT_TYPE_KEYS = [
+  'sql',
+  'python',
+  'literature',
+  'hypothesis',
+  'note',
+  'dataIngest',
+  'task',
+] as const;
+
 /**
- * Derives a deterministic background color from a user ID.
+ * Derives a deterministic background color from a user ID using theme inputType tokens.
  */
 function getAvatarColor(id: string): string {
-  const colors = [
-    '#2B6CB0', '#7B4EA3', '#1A7F5A', '#B8660D',
-    '#7A6340', '#2D8E8E', '#C53030', '#6B7268',
-  ];
   let hash = 0;
   for (let i = 0; i < id.length; i++) {
     hash = id.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[Math.abs(hash) % colors.length];
+  const key = INPUT_TYPE_KEYS[Math.abs(hash) % INPUT_TYPE_KEYS.length];
+  return vars.color.inputType[key].bg;
 }
 
 /**
