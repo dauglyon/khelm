@@ -1,9 +1,10 @@
-import { forwardRef, type SelectHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useId, type SelectHTMLAttributes, type ReactNode } from 'react';
 import { Icon } from '@/common/components/Icon';
 import {
   wrapper,
   wrapperFocused,
   wrapperError,
+  wrapperDisabled,
   wrapperSizeVariants,
   selectElement,
   chevronWrapper,
@@ -30,18 +31,21 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       children,
       className,
       placeholder,
+      disabled,
       ...rest
     },
     ref
   ) {
     const hasError = !!error;
     const errorText = typeof error === 'string' ? error : undefined;
+    const errorId = useId();
 
     const wrapperClasses = [
       wrapper,
       wrapperFocused,
       wrapperSizeVariants[size],
       hasError ? wrapperError : undefined,
+      disabled ? wrapperDisabled : undefined,
       className,
     ]
       .filter(Boolean)
@@ -54,6 +58,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             className={selectElement}
             aria-invalid={hasError || undefined}
+            aria-describedby={errorText ? errorId : undefined}
+            disabled={disabled}
             {...rest}
           >
             {placeholder && (
@@ -67,7 +73,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             <Icon name="chevron-down" size={16} />
           </span>
         </div>
-        {errorText && <div className={errorMessage}>{errorText}</div>}
+        {errorText && <div id={errorId} className={errorMessage}>{errorText}</div>}
       </div>
     );
   }

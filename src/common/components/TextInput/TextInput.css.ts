@@ -1,44 +1,21 @@
-import { style, styleVariants } from '@vanilla-extract/css';
+import { style } from '@vanilla-extract/css';
 import { vars } from '@/theme';
+import {
+  inputWrapper,
+  inputWrapperFocused,
+  inputWrapperError,
+  inputWrapperSizeVariants,
+  inputWrapperDisabled,
+  inputErrorMessage,
+} from '../_shared/inputWrapper.css';
 
-export const wrapper = style({
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: vars.color.surface,
-  border: `1px solid ${vars.color.border}`,
-  borderRadius: '6px',
-  transition: 'border-color 150ms, outline 150ms',
-  outline: 'none',
-});
-
-export const wrapperFocused = style({
-  selectors: {
-    '&:focus-within': {
-      outline: `2px solid ${vars.color.text}`,
-      outlineOffset: '2px',
-    },
-  },
-});
-
-export const wrapperError = style({
-  borderColor: vars.color.status.error,
-});
-
-export const wrapperSizeVariants = styleVariants({
-  sm: {
-    height: '32px',
-    fontSize: '13px',
-    fontFamily: vars.font.sans,
-    lineHeight: 1.5,
-  },
-  md: {
-    height: '40px',
-    fontSize: '15px',
-    fontFamily: vars.font.sans,
-    lineHeight: 1.5,
-  },
-});
+// Re-export shared styles under the original names for backward compatibility
+export const wrapper = inputWrapper;
+export const wrapperFocused = inputWrapperFocused;
+export const wrapperError = inputWrapperError;
+export const wrapperSizeVariants = inputWrapperSizeVariants;
+export const wrapperDisabled = inputWrapperDisabled;
+export const errorMessage = inputErrorMessage;
 
 export const inputElement = style({
   border: 'none',
@@ -70,19 +47,4 @@ export const prefixStyle = style({
 
 export const suffixStyle = style({
   paddingRight: '10px',
-});
-
-export const wrapperDisabled = style({
-  opacity: 0.5,
-  pointerEvents: 'none',
-  cursor: 'not-allowed',
-});
-
-export const errorMessage = style({
-  color: vars.color.status.error,
-  fontSize: '11px',
-  fontWeight: 500,
-  lineHeight: 1.4,
-  fontFamily: vars.font.sans,
-  marginTop: '4px',
 });

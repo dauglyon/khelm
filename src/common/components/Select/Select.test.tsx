@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { createRef } from 'react';
 import { Select } from './Select';
+import { selectElement, wrapperDisabled } from './Select.css';
 
 describe('Select', () => {
   it('renders with option children', () => {
@@ -56,6 +57,19 @@ describe('Select', () => {
     expect(selectEl.getAttribute('aria-invalid')).toBe('true');
   });
 
+  it('links select to error message via aria-describedby when error is a string', () => {
+    render(
+      <Select error="Required field">
+        <option value="a">A</option>
+      </Select>
+    );
+    const select = screen.getByRole('combobox');
+    const errorEl = screen.getByText('Required field');
+    expect(select.getAttribute('aria-describedby')).toBe(
+      errorEl.getAttribute('id')
+    );
+  });
+
   it('passes value and onChange', () => {
     const onChange = vi.fn();
     render(
@@ -87,7 +101,42 @@ describe('Select', () => {
       </Select>
     );
     const selectEl = container.querySelector('select');
-    // The selectElement class includes appearance: none
-    expect(selectEl?.className).toBeTruthy();
+    expect(selectEl?.className).toContain(selectElement);
+  });
+
+  it('error={true} sets aria-invalid but renders no error text', () => {
+    render(
+      <Select error={true}>
+        <option value="a">A</option>
+      </Select>
+    );
+    const selectEl = screen.getByRole('combobox');
+    expect(selectEl.getAttribute('aria-invalid')).toBe('true');
+    expect(selectEl.getAttribute('aria-describedby')).toBeNull();
+  });
+
+  it('renders placeholder as a disabled option', () => {
+    render(
+      <Select placeholder="Choose...">
+        <option value="a">A</option>
+      </Select>
+    );
+    const placeholderOption = screen.getByText('Choose...');
+    expect(placeholderOption).toBeInTheDocument();
+    expect(placeholderOption.tagName).toBe('OPTION');
+    expect((placeholderOption as HTMLOptionElement).disabled).toBe(true);
+  });
+
+  it('disabled state: select has disabled attribute and wrapper has disabled class', () => {
+    const { container } = render(
+      <Select disabled>
+        <option value="a">A</option>
+      </Select>
+    );
+    const selectEl = screen.getByRole('combobox');
+    expect(selectEl).toBeDisabled();
+    // outer div > inner wrapper div (first child of outer div)
+    const wrapperEl = container.firstElementChild!.firstElementChild as HTMLElement;
+    expect(wrapperEl.className).toContain(wrapperDisabled);
   });
 });

@@ -69,7 +69,7 @@ describe('ClassificationPreview', () => {
     expect(indicator).toBeTruthy();
   });
 
-  it('clicking indicator opens dropdown with all 6 types', () => {
+  it('clicking indicator opens dropdown with all 7 types', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
         type: 'sql',
@@ -87,7 +87,7 @@ describe('ClassificationPreview', () => {
     expect(dropdown).toBeTruthy();
 
     const options = screen.getAllByRole('option');
-    expect(options.length).toBe(6);
+    expect(options.length).toBe(7);
   });
 
   it('selecting a type in dropdown calls setUserOverride', () => {
