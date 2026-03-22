@@ -5,7 +5,11 @@ export interface SkeletonProps {
   variant?: 'text' | 'rect' | 'circle';
   /** Width of the skeleton. Default: '100%' */
   width?: string | number;
-  /** Height of the skeleton. Derived from variant if not specified. */
+  /**
+   * Height of the skeleton. Derived from variant if not specified.
+   * Note: ignored for the circle variant — the diameter is derived from `width`
+   * alone so that a perfect circle is always produced.
+   */
   height?: string | number;
   /** Number of text lines (text variant only). Default: 1 */
   lines?: number;
@@ -15,14 +19,22 @@ export interface SkeletonProps {
 
 export function Skeleton({
   variant = 'text',
-  width = '100%',
+  width,
   height,
   lines = 1,
   className,
 }: SkeletonProps) {
-  const resolvedWidth = typeof width === 'number' ? `${width}px` : width;
-
   if (variant === 'text') {
+    // lines <= 0: render nothing
+    if (lines <= 0) return null;
+
+    const resolvedWidth =
+      width === undefined
+        ? '100%'
+        : typeof width === 'number'
+          ? `${width}px`
+          : width;
+
     const lineHeight = height ?? 20;
     const resolvedLineHeight =
       typeof lineHeight === 'number' ? `${lineHeight}px` : lineHeight;
@@ -76,14 +88,21 @@ export function Skeleton({
   }
 
   // rect variant
-  const resolvedHeight =
-    typeof (height ?? 100) === 'number' ? `${height ?? 100}px` : height;
+  const resolvedWidth =
+    width === undefined
+      ? '100%'
+      : typeof width === 'number'
+        ? `${width}px`
+        : width;
+  const resolvedHeight = height ?? '100px';
+  const resolvedHeightStr =
+    typeof resolvedHeight === 'number' ? `${resolvedHeight}px` : resolvedHeight;
   const baseClass = [skeletonBase, className].filter(Boolean).join(' ');
   return (
     <div
       aria-hidden="true"
       className={baseClass}
-      style={{ width: resolvedWidth, height: resolvedHeight }}
+      style={{ width: resolvedWidth, height: resolvedHeightStr }}
     />
   );
 }

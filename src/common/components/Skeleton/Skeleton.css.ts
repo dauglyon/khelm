@@ -17,10 +17,15 @@ export const skeletonBase = style({
     background: `linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)`,
     animation: `${shimmerKeyframes} 1.5s linear infinite`,
   },
+  // The ::after pseudo-element must be nested inside the @media block because
+  // vanilla-extract does not support top-level pseudo-element overrides within
+  // a @media rule; nesting here ensures the shimmer animation is disabled for
+  // users who have requested reduced motion.
   '@media': {
     '(prefers-reduced-motion: reduce)': {
       '::after': {
-        animation: 'none',
+        animationDuration: '0.01ms',
+        animationIterationCount: '1',
       },
     },
   },
