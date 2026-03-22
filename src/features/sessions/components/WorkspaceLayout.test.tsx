@@ -1,8 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { WorkspaceLayout } from './WorkspaceLayout';
+import { useLayoutStore } from '@/common/stores/layoutStore';
 
 describe('WorkspaceLayout', () => {
+  beforeEach(() => {
+    useLayoutStore.setState({ sidebarOpen: true });
+  });
+
   it('renders the header region', () => {
     render(<WorkspaceLayout>Content</WorkspaceLayout>);
     expect(screen.getByTestId('header')).toBeInTheDocument();
@@ -36,5 +41,36 @@ describe('WorkspaceLayout', () => {
   it('renders toolbar input placeholder', () => {
     render(<WorkspaceLayout>Content</WorkspaceLayout>);
     expect(screen.getByText('Input surface placeholder')).toBeInTheDocument();
+  });
+
+  describe('sidebar integration', () => {
+    it('renders sidebar inside layout', () => {
+      render(<WorkspaceLayout>Content</WorkspaceLayout>);
+      expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    });
+
+    it('sidebar has open state when store is open', () => {
+      useLayoutStore.setState({ sidebarOpen: true });
+      render(<WorkspaceLayout>Content</WorkspaceLayout>);
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-state', 'open');
+    });
+
+    it('sidebar has closed state when store is closed', () => {
+      useLayoutStore.setState({ sidebarOpen: false });
+      render(<WorkspaceLayout>Content</WorkspaceLayout>);
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-state', 'closed');
+    });
+
+    it('toggling sidebar state changes data-state attribute', () => {
+      useLayoutStore.setState({ sidebarOpen: true });
+      render(<WorkspaceLayout>Content</WorkspaceLayout>);
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-state', 'open');
+
+      act(() => {
+        useLayoutStore.getState().toggleSidebar();
+      });
+
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-state', 'closed');
+    });
   });
 });

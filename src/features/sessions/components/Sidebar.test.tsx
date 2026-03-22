@@ -33,6 +33,13 @@ describe('Sidebar', () => {
     renderSidebar(false);
     const sidebarEl = screen.getByTestId('sidebar');
     expect(sidebarEl).toBeInTheDocument();
+    expect(sidebarEl).toHaveAttribute('data-state', 'closed');
+  });
+
+  it('open state has data-state="open"', () => {
+    renderSidebar(true);
+    const sidebarEl = screen.getByTestId('sidebar');
+    expect(sidebarEl).toHaveAttribute('data-state', 'open');
   });
 
   it('toggle changes sidebar state in store', () => {

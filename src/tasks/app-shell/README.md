@@ -22,7 +22,7 @@ The app-shell domain delivers the top-level application skeleton: Vite 8 project
 | 03 | React Router v7 route definitions + page stubs | 02 | done | done |
 | 04 | RequireAuth + RequireSession route guards | 03 | done | done |
 | 05 | Layout skeleton -- header, toolbar, main regions | 03 | done | done |
-| 06 | Layout skeleton -- collapsible sidebar | 05 | pending | done |
+| 06 | Layout skeleton -- collapsible sidebar | 05 | done | done |
 | 07 | OpenAPI spec authoring (sessions API) | (none) | pending | done |
 | 08 | Orval config + code generation pipeline | 07, 01 | pending | done |
 | 09 | MSW browser + node worker setup | 08 | pending | done |
