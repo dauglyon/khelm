@@ -31,7 +31,7 @@ describe('theme contract', () => {
     expect(vars.color.inputType).toHaveProperty('sql');
     expect(vars.color.inputType).toHaveProperty('python');
     expect(vars.color.inputType).toHaveProperty('literature');
-    expect(vars.color.inputType).toHaveProperty('hypothesis');
+    expect(vars.color.inputType).toHaveProperty('chat');
     expect(vars.color.inputType).toHaveProperty('note');
     expect(vars.color.inputType).toHaveProperty('dataIngest');
     expect(vars.color.inputType).toHaveProperty('task');
@@ -42,7 +42,7 @@ describe('theme contract', () => {
       'sql',
       'python',
       'literature',
-      'hypothesis',
+      'chat',
       'note',
       'dataIngest',
       'task',
@@ -91,7 +91,7 @@ describe('InputType type', () => {
       'sql',
       'python',
       'literature',
-      'hypothesis',
+      'chat',
       'note',
       'dataIngest',
       'task',

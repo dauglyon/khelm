@@ -20,7 +20,7 @@ export const themeClass = createTheme(vars, {
       sql: { fg: '#2B6CB0', bg: '#E3EDF7', border: '#B0CDE4' },
       python: { fg: '#7B4EA3', bg: '#EDE5F5', border: '#C4B0DA' },
       literature: { fg: '#1A7F5A', bg: '#E0F2EA', border: '#A8D8C4' },
-      hypothesis: { fg: '#B8660D', bg: '#FBF0E0', border: '#E4C890' },
+      chat: { fg: '#B8660D', bg: '#FBF0E0', border: '#E4C890' },
       note: { fg: '#7A6340', bg: '#F5F0E7', border: '#D6C8AD' },
       dataIngest: { fg: '#2D8E8E', bg: '#E0F2F2', border: '#A8D6D6' },
       task: { fg: '#7A3B5E', bg: '#F2E6EE', border: '#C9A3B8' },

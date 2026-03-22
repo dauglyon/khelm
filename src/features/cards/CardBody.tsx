@@ -3,13 +3,11 @@ import { NoteBody } from './bodies/NoteBody';
 import { SqlBody } from './bodies/SqlBody';
 import { PythonBody } from './bodies/PythonBody';
 import { LiteratureBody } from './bodies/LiteratureBody';
-import { HypothesisBody } from './bodies/HypothesisBody';
 import { DataIngestBody } from './bodies/DataIngestBody';
 import type { NoteContent } from './types';
 import type { SqlContent, SqlResult } from './types';
 import type { PythonContent, PythonResult } from './types';
 import type { LiteratureContent, LiteratureResult } from './types';
-import type { HypothesisContent, HypothesisResult } from './types';
 import type { DataIngestContent, DataIngestResult } from './types';
 import { cardTypeLabel } from './types';
 
@@ -59,15 +57,6 @@ export function CardBody({
           content={content as LiteratureContent}
           result={result as LiteratureResult | null}
           status={status}
-        />
-      );
-    case 'hypothesis':
-      return (
-        <HypothesisBody
-          content={content as HypothesisContent}
-          result={result as HypothesisResult | null}
-          status={status}
-          streamingContent={streamingContent}
         />
       );
     case 'data_ingest':

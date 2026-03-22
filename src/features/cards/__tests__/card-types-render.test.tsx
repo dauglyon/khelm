@@ -97,26 +97,6 @@ describe('Card Type Rendering Integration', () => {
     expect(screen.getByText('Showing 1 of 50 results')).toBeInTheDocument();
   });
 
-  it('renders Hypothesis card with claim and analysis', () => {
-    useCardStore.getState().setCard(
-      createMockCard({
-        type: 'hypothesis',
-        shortname: 'Test Hypothesis',
-        content: { claim: 'Soil depth matters' },
-        result: {
-          analysis: 'This is supported.',
-          suggestedQueries: [],
-          confidence: 0.9,
-        },
-      })
-    );
-    render(<CardComponent cardId="card-1" />);
-    expect(screen.getByText('Soil depth matters')).toBeInTheDocument();
-    expect(screen.getByText('This is supported.')).toBeInTheDocument();
-    expect(screen.getByText('Hypothesis')).toBeInTheDocument();
-    expect(screen.getByText('Confidence: 90%')).toBeInTheDocument();
-  });
-
   it('renders Note card with editable textarea', () => {
     useCardStore.getState().setCard(
       createMockCard({
@@ -157,7 +137,6 @@ describe('Card Type Rendering Integration', () => {
       { type: 'sql' as const, label: 'SQL', content: { query: 'x', dataSource: 'y' } },
       { type: 'python' as const, label: 'Python', content: { code: 'x', language: 'python' as const } },
       { type: 'literature' as const, label: 'Literature', content: { searchTerms: ['x'] } },
-      { type: 'hypothesis' as const, label: 'Hypothesis', content: { claim: 'x' } },
       { type: 'note' as const, label: 'Note', content: { text: 'x' } },
       { type: 'data_ingest' as const, label: 'Data Ingest', content: { fileName: 'x', fileSize: 0, mimeType: 'x' } },
     ];

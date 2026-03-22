@@ -13,13 +13,12 @@ import type {
 } from '../types';
 
 describe('Card types', () => {
-  it('CARD_TYPES has exactly 6 values', () => {
-    expect(CARD_TYPES).toHaveLength(6);
+  it('CARD_TYPES has exactly 5 values', () => {
+    expect(CARD_TYPES).toHaveLength(5);
     expect(CARD_TYPES).toEqual([
       'sql',
       'python',
       'literature',
-      'hypothesis',
       'note',
       'data_ingest',
     ]);
@@ -34,7 +33,6 @@ describe('Card types', () => {
     expect(cardTypeToInputType('sql')).toBe('sql');
     expect(cardTypeToInputType('python')).toBe('python');
     expect(cardTypeToInputType('literature')).toBe('literature');
-    expect(cardTypeToInputType('hypothesis')).toBe('hypothesis');
     expect(cardTypeToInputType('note')).toBe('note');
     expect(cardTypeToInputType('data_ingest')).toBe('dataIngest');
   });

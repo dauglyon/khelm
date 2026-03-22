@@ -28,7 +28,7 @@ const typeColors: Record<InputType, string> = {
   sql: '#2B6CB0',
   python: '#7B4EA3',
   literature: '#1A7F5A',
-  hypothesis: '#B8660D',
+  chat: '#B8660D',
   note: '#7A6340',
   dataIngest: '#2D8E8E',
   task: '#7A3B5E',

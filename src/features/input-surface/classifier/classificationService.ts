@@ -10,7 +10,7 @@ function normalizeType(type: string): ClassificationResult['type'] | null {
     sql: 'sql',
     python: 'python',
     literature: 'literature',
-    hypothesis: 'hypothesis',
+    chat: 'chat',
     note: 'note',
     data_ingest: 'dataIngest',
     dataIngest: 'dataIngest',

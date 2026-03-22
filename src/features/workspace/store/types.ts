@@ -10,7 +10,6 @@ export type CardType =
   | 'sql'
   | 'python'
   | 'literature'
-  | 'hypothesis'
   | 'note'
   | 'data_ingest';
 

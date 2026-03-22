@@ -10,7 +10,7 @@ const INPUT_TYPE_KEYS = [
   'sql',
   'python',
   'literature',
-  'hypothesis',
+  'chat',
   'note',
   'dataIngest',
   'task',

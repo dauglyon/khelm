@@ -15,7 +15,6 @@ const cardTypeToInputType: Record<CardType, InputType> = {
   sql: 'sql',
   python: 'python',
   literature: 'literature',
-  hypothesis: 'hypothesis',
   note: 'note',
   data_ingest: 'dataIngest',
 };

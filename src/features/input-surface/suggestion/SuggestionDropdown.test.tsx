@@ -18,7 +18,7 @@ const mockCards: SuggestionCard[] = [
   { id: '2', shortname: 'python-1', title: 'Phylum analysis', type: 'python' },
   { id: '3', shortname: 'note-1', title: 'QC check reminder', type: 'note' },
   { id: '4', shortname: 'lit-1', title: 'CRISPR papers', type: 'literature' },
-  { id: '5', shortname: 'hyp-1', title: 'pH correlation', type: 'hypothesis' },
+  { id: '5', shortname: 'chat-1', title: 'pH discussion', type: 'chat' },
 ];
 
 describe('SuggestionDropdown', () => {

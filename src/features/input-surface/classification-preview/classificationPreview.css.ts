@@ -63,10 +63,10 @@ export const pillColorVariants = styleVariants({
     backgroundColor: vars.color.inputType.literature.bg,
     borderColor: vars.color.inputType.literature.border,
   },
-  hypothesis: {
-    color: vars.color.inputType.hypothesis.fg,
-    backgroundColor: vars.color.inputType.hypothesis.bg,
-    borderColor: vars.color.inputType.hypothesis.border,
+  chat: {
+    color: vars.color.inputType.chat.fg,
+    backgroundColor: vars.color.inputType.chat.bg,
+    borderColor: vars.color.inputType.chat.border,
   },
   note: {
     color: vars.color.inputType.note.fg,

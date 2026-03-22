@@ -32,7 +32,7 @@ describe('ClassificationPreview', () => {
   it('shows dashed border for confidence 0.50-0.79', () => {
     act(() => {
       useInputSurfaceStore.getState().setClassification({
-        type: 'hypothesis',
+        type: 'chat',
         confidence: 0.65,
         alternatives: [{ type: 'note', confidence: 0.20 }],
       });
@@ -42,7 +42,7 @@ describe('ClassificationPreview', () => {
 
     const indicator = screen.getByTestId('type-indicator');
     expect(indicator).toBeTruthy();
-    expect(indicator.textContent).toBe('Hypothesis');
+    expect(indicator.textContent).toBe('Chat');
   });
 
   it('shows multiple selectable pills for confidence < 0.50', () => {
@@ -51,7 +51,7 @@ describe('ClassificationPreview', () => {
         type: 'note',
         confidence: 0.35,
         alternatives: [
-          { type: 'hypothesis', confidence: 0.30 },
+          { type: 'chat', confidence: 0.30 },
           { type: 'literature', confidence: 0.20 },
         ],
       });

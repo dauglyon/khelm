@@ -192,7 +192,7 @@ describe('classificationService', () => {
           return HttpResponse.json({
             type: 'literature',
             confidence: 0.88,
-            alternatives: [{ type: 'hypothesis', confidence: 0.08 }],
+            alternatives: [{ type: 'chat', confidence: 0.08 }],
           });
         })
       );
@@ -205,7 +205,7 @@ describe('classificationService', () => {
       expect(mockStore.setClassification).toHaveBeenCalledWith({
         type: 'literature',
         confidence: 0.88,
-        alternatives: [{ type: 'hypothesis', confidence: 0.08 }],
+        alternatives: [{ type: 'chat', confidence: 0.08 }],
       });
 
       classifier.destroy();
@@ -294,7 +294,7 @@ describe('classificationService', () => {
       expect(SYSTEM_PROMPT).toContain('sql');
       expect(SYSTEM_PROMPT).toContain('python');
       expect(SYSTEM_PROMPT).toContain('literature');
-      expect(SYSTEM_PROMPT).toContain('hypothesis');
+      expect(SYSTEM_PROMPT).toContain('chat');
       expect(SYSTEM_PROMPT).toContain('note');
       expect(SYSTEM_PROMPT).toContain('data_ingest');
     });
@@ -316,7 +316,7 @@ describe('classificationService', () => {
       expect(byCat['sql']).toBe(5);
       expect(byCat['python']).toBe(5);
       expect(byCat['literature']).toBe(5);
-      expect(byCat['hypothesis']).toBe(5);
+      expect(byCat['chat']).toBe(5);
       expect(byCat['note']).toBe(5);
       expect(byCat['data_ingest']).toBe(5);
     });
@@ -324,7 +324,7 @@ describe('classificationService', () => {
     it('includes disambiguation rules', () => {
       expect(SYSTEM_PROMPT).toContain('Disambiguation');
       expect(SYSTEM_PROMPT).toContain('Imperative sentence + data verb');
-      expect(SYSTEM_PROMPT).toContain('Declarative claim');
+      expect(SYSTEM_PROMPT).toContain('Conversational question');
     });
   });
 });

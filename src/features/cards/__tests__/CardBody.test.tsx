@@ -55,19 +55,6 @@ describe('CardBody', () => {
     expect(screen.getByText('test')).toBeInTheDocument();
   });
 
-  it('renders HypothesisBody for hypothesis type', () => {
-    render(
-      <CardBody
-        type="hypothesis"
-        content={{ claim: 'Test claim' }}
-        result={null}
-        status="thinking"
-        cardId="card-1"
-      />
-    );
-    expect(screen.getByText('Test claim')).toBeInTheDocument();
-  });
-
   it('renders DataIngestBody for data_ingest type', () => {
     render(
       <CardBody

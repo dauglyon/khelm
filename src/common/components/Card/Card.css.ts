@@ -36,7 +36,7 @@ const inputTypes: InputType[] = [
   'sql',
   'python',
   'literature',
-  'hypothesis',
+  'chat',
   'note',
   'dataIngest',
   'task',

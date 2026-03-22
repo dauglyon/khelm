@@ -19,7 +19,7 @@ export const vars = createThemeContract({
       sql: { fg: null, bg: null, border: null },
       python: { fg: null, bg: null, border: null },
       literature: { fg: null, bg: null, border: null },
-      hypothesis: { fg: null, bg: null, border: null },
+      chat: { fg: null, bg: null, border: null },
       note: { fg: null, bg: null, border: null },
       dataIngest: { fg: null, bg: null, border: null },
       task: { fg: null, bg: null, border: null },
@@ -41,7 +41,7 @@ export type InputType =
   | 'sql'
   | 'python'
   | 'literature'
-  | 'hypothesis'
+  | 'chat'
   | 'note'
   | 'dataIngest'
   | 'task';

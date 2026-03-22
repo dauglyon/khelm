@@ -12,7 +12,6 @@ export type CardType =
   | 'sql'
   | 'python'
   | 'literature'
-  | 'hypothesis'
   | 'note'
   | 'data_ingest';
 
@@ -22,7 +21,6 @@ export const CARD_TYPES: readonly CardType[] = [
   'sql',
   'python',
   'literature',
-  'hypothesis',
   'note',
   'data_ingest',
 ] as const;
@@ -102,12 +100,6 @@ export interface LiteratureContent {
   filters?: LitFilters;
 }
 
-export interface HypothesisContent {
-  claim: string;
-  evidence?: string;
-  domain?: string;
-}
-
 export interface NoteContent {
   text: string;
 }
@@ -122,7 +114,6 @@ export interface CardContentMap {
   sql: SqlContent;
   python: PythonContent;
   literature: LiteratureContent;
-  hypothesis: HypothesisContent;
   note: NoteContent;
   data_ingest: DataIngestContent;
 }
@@ -152,12 +143,6 @@ export interface LiteratureResult {
   totalCount: number;
 }
 
-export interface HypothesisResult {
-  analysis: string;
-  suggestedQueries: SuggestedQuery[];
-  confidence?: number;
-}
-
 export type NoteResult = null;
 
 export interface DataIngestResult {
@@ -171,7 +156,6 @@ export interface CardResultMap {
   sql: SqlResult;
   python: PythonResult;
   literature: LiteratureResult;
-  hypothesis: HypothesisResult;
   note: NoteResult;
   data_ingest: DataIngestResult;
 }
@@ -238,7 +222,6 @@ const cardTypeToInputTypeMap: Record<CardType, InputType> = {
   sql: 'sql',
   python: 'python',
   literature: 'literature',
-  hypothesis: 'hypothesis',
   note: 'note',
   data_ingest: 'dataIngest',
 };
@@ -252,7 +235,6 @@ export function cardTypeLabel(type: CardType): string {
     sql: 'SQL',
     python: 'Python',
     literature: 'Literature',
-    hypothesis: 'Hypothesis',
     note: 'Note',
     data_ingest: 'Data Ingest',
   };

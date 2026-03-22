@@ -57,8 +57,8 @@ describe('useInputSurfaceStore', () => {
 
   describe('setUserOverride', () => {
     it('sets the user override type', () => {
-      useInputSurfaceStore.getState().setUserOverride('hypothesis');
-      expect(useInputSurfaceStore.getState().userOverrideType).toBe('hypothesis');
+      useInputSurfaceStore.getState().setUserOverride('chat');
+      expect(useInputSurfaceStore.getState().userOverrideType).toBe('chat');
     });
   });
 
@@ -91,9 +91,9 @@ describe('useInputSurfaceStore', () => {
         confidence: 0.85,
         alternatives: [],
       });
-      store.setUserOverride('hypothesis');
+      store.setUserOverride('chat');
 
-      expect(useInputSurfaceStore.getState().resolvedType()).toBe('hypothesis');
+      expect(useInputSurfaceStore.getState().resolvedType()).toBe('chat');
     });
 
     it('returns null when neither classified nor overridden', () => {
@@ -139,7 +139,7 @@ describe('useInputSurfaceStore', () => {
         confidence: 0.92,
         alternatives: [{ type: 'python', confidence: 0.05 }],
       });
-      store.setUserOverride('hypothesis');
+      store.setUserOverride('chat');
       store.setIsClassifying(true);
       store.setIsSubmitting(true);
       store.setClassifierMode('api');

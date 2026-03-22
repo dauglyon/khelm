@@ -71,7 +71,7 @@ export function SqlBody({ content, result, status }: SqlBodyProps) {
           <div className={rowCount}>
             <span>{result.rowCount} rows</span>
             {result.truncated && (
-              <Chip inputType="hypothesis" label="Truncated" size="sm" />
+              <Chip inputType="chat" label="Truncated" size="sm" />
             )}
           </div>
         </>

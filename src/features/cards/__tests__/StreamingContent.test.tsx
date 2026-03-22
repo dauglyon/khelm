@@ -9,7 +9,7 @@ describe('StreamingContent', () => {
         cardId="card-1"
         content={'# Hello\n\nWorld'}
         isStreaming={false}
-        cardType="hypothesis"
+        cardType="sql"
       />
     );
     expect(screen.getByText('Hello')).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe('StreamingContent', () => {
         cardId="card-1"
         content="Some text"
         isStreaming={true}
-        cardType="hypothesis"
+        cardType="sql"
       />
     );
     expect(screen.getByTestId('streaming-cursor')).toBeInTheDocument();
@@ -34,7 +34,7 @@ describe('StreamingContent', () => {
         cardId="card-1"
         content="Some text"
         isStreaming={false}
-        cardType="hypothesis"
+        cardType="sql"
       />
     );
     expect(screen.queryByTestId('streaming-cursor')).not.toBeInTheDocument();
@@ -59,7 +59,7 @@ describe('StreamingContent', () => {
         cardId="card-1"
         content="**bold but not closed"
         isStreaming={true}
-        cardType="hypothesis"
+        cardType="sql"
       />
     );
     expect(screen.getByText('**bold but not closed')).toBeInTheDocument();

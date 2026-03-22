@@ -102,7 +102,7 @@ describe('Card', () => {
       'sql',
       'python',
       'literature',
-      'hypothesis',
+      'chat',
       'note',
       'dataIngest',
       'task',

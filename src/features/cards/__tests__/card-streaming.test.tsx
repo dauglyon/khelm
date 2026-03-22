@@ -105,7 +105,7 @@ describe('Card Streaming Integration', () => {
         cardId="card-1"
         content="Streaming text"
         isStreaming={true}
-        cardType="hypothesis"
+        cardType="sql"
       />
     );
     expect(screen.getByTestId('streaming-cursor')).toBeInTheDocument();
@@ -117,7 +117,7 @@ describe('Card Streaming Integration', () => {
         cardId="card-1"
         content="Final text"
         isStreaming={false}
-        cardType="hypothesis"
+        cardType="sql"
       />
     );
     expect(screen.queryByTestId('streaming-cursor')).not.toBeInTheDocument();
