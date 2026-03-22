@@ -32,12 +32,14 @@ This spec defines the card data model, type-specific rendering, status lifecycle
 | `hypothesis` | Structured scientific claim |
 | `note` | Free-form text |
 | `data_ingest` | File upload with schema detection |
+| `task` | Containerized tool execution via KBase CDM Task Service (CTS) |
 
 ### CardStatus Enum
 
 | Value | Description |
 |-------|-------------|
 | `thinking` | Classifier/AI is processing input, generating executable form |
+| `queued` | Job submitted, waiting on compute allocation (e.g. NERSC). Sits between thinking and running. |
 | `running` | Query or code is executing against a backend |
 | `complete` | Execution finished successfully; result is populated |
 | `error` | Execution failed; error is populated |
@@ -56,6 +58,7 @@ Each card type has a distinct content shape, result shape, and body renderer.
 | Hypothesis | `{ claim: string; evidence?: string; domain?: string }` | `{ analysis: string; suggestedQueries: SuggestedQuery[]; confidence?: number }` |
 | Note | `{ text: string }` | `null` (notes have no execution result) |
 | Data Ingest | `{ fileName: string; fileSize: number; mimeType: string }` | `{ schema: SchemaField[]; sampleRows: Row[]; totalRows: number; uploadId: string }` |
+| Task | `{ toolName: string; toolVersion: string; computeTarget: string; containerImage: string; inputs: TaskInput[] }` | `{ outputFiles: OutputFile[]; logs?: string; elapsed: number }` |
 
 ### Body Rendering by Type
 
@@ -67,6 +70,7 @@ Each card type has a distinct content shape, result shape, and body renderer.
 | Hypothesis | Structured display: claim in a callout block (Serif font), followed by AI analysis text (streamed). Below analysis, render `suggestedQueries` as clickable chips that create new cards. |
 | Note | Editable plain text area. No execution, no result section. |
 | Data Ingest | Two-section layout: schema preview (field name, inferred type, sample values) as a compact table, followed by a data sample table showing first N rows. Show upload progress bar while `status === "running"`. |
+| Task | Transform bar showing tool name + version + compute target (container image behind "view source"). Running state: status label (queued/running) + elapsed timer + expandable log link. No progress bar (containers are opaque). Output: directory tree of produced files (name, size, type) with ingest buttons to promote outputs into workspace. |
 
 ## Card Header
 
@@ -79,9 +83,26 @@ Every card renders a consistent header regardless of type.
 | Status indicator | Small dot or icon beside the type badge. Color from Status Colors in README. Animated per status (see Status Lifecycle below). |
 | Action buttons | Icon buttons, visible on hover or focus. Actions: open chat panel, copy card, pin/unpin, delete. Delete requires confirmation. |
 
+## Compound Cards
+
+Task cards are usually **compound cards** — they decompose into sub-cards when input data needs format conversion.
+
+| Sub-card | Type | Purpose |
+|----------|------|---------|
+| `.prep` | `python` | Stages/formats input data for the container |
+| `.run` | `task` | Actual container execution on remote compute |
+
+The system decides whether to decompose based on schema match: if input already matches the container's expected format, a simple task card is created. Otherwise, a compound card with `.prep` + `.run` sub-cards.
+
+Sub-cards share the parent card's `shortname` with a suffix (e.g., `blast_run.prep`, `blast_run.run`). They appear as an indented group in the workspace.
+
+### Cost Awareness
+
+For expensive tasks, a **modal warning** appears before submit with estimated time/resource cost. The cost threshold is configurable per tool.
+
 ## Status Lifecycle
 
-Cards progress through statuses with distinct visual treatments. Motion `variants` drive all transitions.
+Cards progress through statuses with distinct visual treatments. Motion `variants` drive scale transitions; CSS `styleVariants` + `transition` drive status colors.
 
 ### State Machine
 
@@ -90,6 +111,9 @@ Cards progress through statuses with distinct visual treatments. Motion `variant
   -------> thinking
   |            |
   |        classify + transform
+  |            |
+  |            v
+  |        queued (task cards only — waiting on compute allocation)
   |            |
   |            v
   |        running

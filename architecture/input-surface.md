@@ -132,7 +132,7 @@ Used when Ollama is unavailable (network deployment, local model not running).
 
 ```
 {
-  "type": "sql" | "python" | "literature" | "hypothesis" | "note" | "data_ingest",
+  "type": "sql" | "python" | "literature" | "hypothesis" | "note" | "data_ingest" | "task",
   "confidence": 0.0 - 1.0,
   "alternatives": [
     { "type": "...", "confidence": 0.0 - 1.0 },
@@ -146,9 +146,9 @@ Used when Ollama is unavailable (network deployment, local model not running).
 | Element | Detail |
 |---------|--------|
 | System context | Classify by what the user wants to DO, not what the input is ABOUT |
-| Category definitions | Action-oriented descriptions for each of the six types |
+| Category definitions | Action-oriented descriptions for each of the seven types |
 | Few-shot examples | 5 per category, including 2 ambiguous/tricky examples per category |
-| Disambiguation rules | Imperative + data verb = SQL; declarative claim = Hypothesis; "papers"/"studies" = Literature; personal/task language = Note |
+| Disambiguation rules | Imperative + data verb = SQL; declarative claim = Hypothesis; "papers"/"studies" = Literature; personal/task language = Note; tool/container/pipeline invocation = Task |
 | Output constraint | JSON schema as defined above; `max_tokens=50` |
 
 ---
@@ -181,7 +181,7 @@ A live type indicator that updates as the user types, showing what the system th
 | Aspect | Specification |
 |--------|---------------|
 | Trigger | Click the type indicator, or automatic when confidence < 0.50 |
-| Content | All six types as selectable items, each with its color |
+| Content | All seven types as selectable items, each with its color |
 | Ordering | Classifier-ranked (highest confidence first) when available; alphabetical otherwise |
 | Selection | Click to override the classified type; override persists for this input until text changes significantly |
 | Dismiss | Click outside, Escape, or select a type |
@@ -223,7 +223,7 @@ A live type indicator that updates as the user types, showing what the system th
 
 ```
 {
-  "type": "sql" | "python" | "literature" | "hypothesis" | "note" | "data_ingest",
+  "type": "sql" | "python" | "literature" | "hypothesis" | "note" | "data_ingest" | "task",
   "content": { /* TipTap JSON document */ },
   "mentions": [ { "cardId": "...", "label": "..." } ],
   "sessionId": "..."

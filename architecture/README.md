@@ -85,6 +85,7 @@ Extracted from the animated demo — these are the authoritative visual constant
 | Hypothesis | `#B8660D` | `#FBF0E0` | `#E4C890` |
 | Note | `#7A6340` | `#F5F0E7` | `#D6C8AD` |
 | Data Ingest | `#2D8E8E` | `#E0F2F2` | `#A8D6D6` |
+| Task | `#7A3B5E` | `#F2E6EE` | `#C9A3B8` |
 
 ### Status Colors
 
@@ -93,6 +94,7 @@ Extracted from the animated demo — these are the authoritative visual constant
 | thinking | `#B8660D` |
 | running | `#2B6CB0` |
 | complete | `#1A7F5A` |
+| queued | `#6B7280` |
 | error | `#C53030` |
 
 ### Typography

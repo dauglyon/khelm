@@ -13,11 +13,26 @@ File drop, type detection, schema preview, and resumable upload for scientific d
 | In Scope | Out of Scope |
 |----------|-------------|
 | OS file drop onto workspace | Server-side parsing and indexing |
-| Client-side type detection (extension + magic bytes) | Remote file sources (Google Drive, Dropbox, URL) |
+| Client-side type detection (extension + magic bytes) | Post-upload data querying |
 | Schema preview from first 64KB | Full-file client-side parsing |
-| Preview card creation and rendering | Post-upload data querying |
+| Preview card creation and rendering | User-defined custom schemas |
 | Resumable tus upload with progress UI | Server-side tus endpoint (tusd) configuration |
-| Schema inference on 64KB sample | User-defined custom schemas |
+| Schema inference on 64KB sample | |
+| DOI / accession number resolution | |
+| Recognized data ID (JGI, NCBI) fetch | |
+
+## Ingest vs Note Rules
+
+What becomes an ingest card vs a note card is determined by whether structured queryable data results.
+
+| Input | Result | Rationale |
+|-------|--------|-----------|
+| File drag-and-drop | **ingest** | Schema detected, structured data |
+| DOI / accession number | **ingest** | Resolves to source, extracts structured data (e.g. supplementary tables) |
+| Recognized data ID (JGI, NCBI) | **ingest** | Fetches from known repository |
+| Arbitrary URL | **note** | Fetched, summarized, stored as session context |
+
+**Rule:** if structured queryable data comes in → ingest. If it's just content → note.
 
 ---
 

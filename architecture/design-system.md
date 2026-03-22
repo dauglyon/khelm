@@ -62,6 +62,7 @@ The contract defines the token shape without values. All consuming code referenc
 | `color.status.thinking` | Status Colors — thinking |
 | `color.status.running` | Status Colors — running |
 | `color.status.complete` | Status Colors — complete |
+| `color.status.queued` | Status Colors — queued |
 | `color.status.error` | Status Colors — error |
 | `color.inputType.[type].fg` | Input Type Colors — Foreground |
 | `color.inputType.[type].bg` | Input Type Colors — Background |
@@ -73,7 +74,7 @@ The contract defines the token shape without values. All consuming code referenc
 | `easing.inOut` | Easing — inOut |
 | `easing.outQuart` | Easing — outQuart |
 
-`[type]` = `sql`, `python`, `literature`, `hypothesis`, `note`, `dataIngest`.
+`[type]` = `sql`, `python`, `literature`, `hypothesis`, `note`, `dataIngest`, `task`.
 
 ### Sprinkles Properties
 

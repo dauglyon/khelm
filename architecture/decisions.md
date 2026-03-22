@@ -81,7 +81,7 @@ Purpose-built for OS file drops. Headless `useDropzone` hook for full UI control
 ### Input Classification: Qwen3.5-4B Local via Ollama
 **Source:** [RSH-005](research/rsh-005-input-classification.md)
 
-This is an intent classification problem (what the user wants to DO), not topic classification (what the input is ABOUT). Domain language (biology/metagenomics) appears across all six categories; instruction-tuned LLMs have a structural advantage.
+This is an intent classification problem (what the user wants to DO), not topic classification (what the input is ABOUT). Domain language (biology/metagenomics) appears across all seven categories (SQL, Python, Literature, Hypothesis, Note, Data Ingest, Task); instruction-tuned LLMs have a structural advantage.
 
 - **Local**: Qwen3.5-4B via Ollama with `/no_think` mode and structured JSON output. ~100-200ms latency, zero per-token cost. Grammar-constrained decoding ensures valid JSON.
 - **API fallback**: Gemini 2.5 Flash Lite or GPT-4.1 nano when local isn't available.
